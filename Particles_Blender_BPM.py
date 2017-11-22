@@ -123,18 +123,9 @@ class OBJECT_OT_ResetButton(bpy.types.Operator):
         def confirm_message(self, context):
             self.layout.label("The system environment was cleaned")
 
-        total_spheres = bpy.context.scene.my_tool.int_box_n_particulas-1
+        nombreObjeto = "Sphere"  
 
-        for cnt in range(0, int(total_spheres)):
-            nombreObjeto = "Sphere"
-            if (cnt>0 and cnt<10):
-                nombreObjeto = "Sphere.00" + str(cnt)
-            if (cnt>=10 and cnt<100):
-                nombreObjeto = "Sphere.0" + str(cnt)   
-            if (cnt>=100):
-                nombreObjeto = "Sphere." + str(cnt)       
-
-            bpy.data.objects[nombreObjeto].hide = False
+        bpy.data.objects[nombreObjeto].hide = False
 
         bpy.context.space_data.viewport_shade = 'MATERIAL'
         bpy.ops.object.select_by_type(type='MESH')
@@ -314,7 +305,7 @@ class OBJECT_OT_RenderVideoButton(bpy.types.Operator):
                 def confirm_message(self, context):
                     self.layout.label("Rendered video saved at: " + dir_image_path )   
 
-            bpy.ops.render.render(animation=True, write_still=True )
+            bpy.ops.render.render(animation=True, write_still=True)
 
 
             bpy.context.window_manager.popup_menu(confirm_message, title="Saved successful", icon='SCENE')
@@ -618,56 +609,6 @@ class ParticleCalculator(bpy.types.Operator):
 
         particles_number = bpy.data.scenes['Scene'].my_tool.int_box_n_particulas #Read from the panel 
         
-
-        #Create materials
-        #Creating a material type
-        mat1 = bpy.data.materials.new('m1')
-        mat1.diffuse_color = (0.8, 0, 0.0327172)
-        mat1.type='VOLUME'
-        mat1.volume.density=0.5
-        mat1.volume.transmission_color = (1, 0.0039, 0.071)
-        mat1.volume.density = 0.3
-        mat1.volume.emission = 2.5
-        mat1.volume.emission_color = (1, 0, 0.25)
-        mat1.volume.density_scale = 0.25
-        #mat1.node_tree.nodes["Emission"].inputs[0].default_value = (0.8,0,0.016,1)
-
-        #Creating a material type
-        mat2 = bpy.data.materials.new('m2')
-        mat2.diffuse_color = (0.8, 0, 0.0327172)
-        mat2.type='VOLUME'
-        mat2.volume.density=0.5
-        mat2.volume.transmission_color = (1, 0.0039, 0.071)
-        mat2.volume.density = 0.5
-        mat2.volume.emission = 2.5
-        mat2.volume.emission_color = (1, 0, 0.25)
-        mat2.volume.density_scale = 0.5
-        #mat2.node_tree.nodes["Emission"].inputs[0].default_value = (0.8,0,0.016,1)
-
-        #Creating a material type
-        mat3 = bpy.data.materials.new('m3')
-        mat3.diffuse_color = (0.8, 0, 0.0327172)
-        mat3.type='VOLUME'
-        mat3.volume.density=0.5
-        mat3.volume.transmission_color = (1, 0.0039, 0.071)
-        mat3.volume.density = 0.8
-        mat3.volume.emission = 2.5
-        mat3.volume.emission_color = (1, 0, 0.25)
-        mat3.volume.density_scale = 2
-        #mat3.node_tree.nodes["Emission"].inputs[0].default_value = (0.8,0,0.016,1)
-
-        #Creating a material type
-        mat4 = bpy.data.materials.new('m4')
-        mat4.diffuse_color = (0.8, 0, 0.0327172)
-        mat4.type='VOLUME'
-        mat4.volume.density=0.5
-        mat4.volume.transmission_color = (1, 0.0039, 0.071)
-        mat4.volume.density = 1
-        mat4.volume.emission = 2.5
-        mat4.volume.emission_color = (1, 0, 0.25)
-        mat4.volume.density_scale = 10
-        #mat4.node_tree.nodes["Emission"].inputs[0].default_value = (0.8,0,0.016,1)
-
 
         #Set the world color to black
         bpy.context.scene.world.horizon_color = (0, 0, 0)
