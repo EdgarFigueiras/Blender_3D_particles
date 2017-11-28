@@ -82,11 +82,23 @@ class MySettings(PropertyGroup):
         maxlen=1024,
         subtype='DIR_PATH')
 
+    total_states_info = IntProperty(
+        name="Min :0  Max ", 
+        description="Total number of states of the simulation",
+        min = 0, max = 1000000,
+        default = 0)
+
+    int_box_particulas_Simulacion = IntProperty(
+        name="Simulation particles", 
+        description="Total number of particles for generating the matrix",
+        min = 10000, max = 10000000,
+        default = 100000)
+
     int_box_n_particulas = IntProperty(
         name="Particles N ", 
         description="Total number of particles of the simulation",
-        min = 50, max = 100000,
-        default = 150)
+        min = 50, max = 10000000,
+        default = 100000)
 
     int_box_granularity = IntProperty(
         name="Granularity ", 
@@ -103,8 +115,8 @@ class MySettings(PropertyGroup):
     int_box_state = IntProperty(
         name="State ", 
         description="Modify the State",
-        min = -1, max = 999,
-        default = -1)
+        min = 0, max = 9999,
+        default = 0)
      
 
 #*************************************************************************# 
@@ -314,6 +326,22 @@ class OBJECT_OT_RenderVideoButton(bpy.types.Operator):
             bpy.context.window_manager.popup_menu(error_message, title="An error ocurred", icon='CANCEL')
 
         return{'FINISHED'}
+
+class OBJECT_OT_CameraPlacement(bpy.types.Operator):
+    bl_idname = "place.camera"
+    bl_label = "Camera management"
+    country = bpy.props.StringProperty()
+
+    def execute(self, context):
+
+        nombreObjeto = "Camera"  
+
+        bpy.data.objects[nombreObjeto].location=(0,0,300)
+        bpy.data.objects[nombreObjeto].rotation_euler=(0,0,0)
+        bpy.data.objects[nombreObjeto].data.clip_end=1000
+
+
+        return{'FINISHED'} 
       
 
 
@@ -325,31 +353,46 @@ class OBJECT_PT_my_panel(Panel):
     bl_category = "Tools"
     bl_context = "objectmode"
 
-class Panel(bpy.types.Panel):
+class PanelSimulation(bpy.types.Panel):
     """Panel para añadir al entorno 3D"""
     bl_label = "Simulation Panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
+    COMPAT_ENGINES = {'BLENDER_RENDER'}
 
     def draw(self, context):
         layout = self.layout
         scn = context.scene
         col = layout.column(align=True)
         box0 = layout.box()
-        box1 = layout.box()
-        box2 = layout.box()
-        box22 = layout.box()
-        box3 = layout.box()
-        box4 = layout.box()
 
         box0.label(text="CALCULATION")
 
-        box0.label(text="Select the folder with the data", icon='LIBRARY_DATA_DIRECT')
+        box0.label(text="Select the folder with the data", icon='FILE_FOLDER')
 
         box0.prop(scn.my_tool, "folder_path", text="")
 
+        box0.label(text="Particles of each step for the simulation", icon='PARTICLE_DATA')
+
+        box0.prop(scn.my_tool, "int_box_particulas_Simulacion")
+
         box0.operator("particles.calculation", text="Calculate data")
        
+
+
+class PanelDataSelection(bpy.types.Panel):
+    """Panel para añadir al entorno 3D"""
+    bl_label = "Data Selection Panel"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'TOOLS'
+    COMPAT_ENGINES = {'BLENDER_RENDER'}
+
+    def draw(self, context):
+        layout = self.layout
+        scn = context.scene
+        col = layout.column(align=True)
+        box1 = layout.box()
+        box2 = layout.box()
 
 
         box1.label(text="PARAMETERS")
@@ -358,17 +401,9 @@ class Panel(bpy.types.Panel):
 
         box1.prop(scn.my_tool, "path", text="")
 
-        box1.label(text="Select the number of particles", icon='PARTICLE_DATA')
+        box1.label(text="Select the number of particles to be shown by step", icon='PARTICLE_DATA')
 
         box1.prop(scn.my_tool, "int_box_n_particulas")
-
-        #box1.label(text="Select the granularity", icon='GROUP_VERTEX')
-
-        #box1.prop(scn.my_tool, "int_box_granularity")
-
-        #box1.label(text="Select the saturation", icon='GROUP_VCOL')
-
-        #box1.prop(scn.my_tool, "int_box_saturation")
 
 
 
@@ -379,15 +414,39 @@ class Panel(bpy.types.Panel):
         box2.operator("reset.image", text="Reset Environment")
 
 
+ 
+
+class PanelStates(bpy.types.Panel):
+    """Panel para añadir al entorno 3D"""
+    bl_label = "States Panel"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'TOOLS'
+    COMPAT_ENGINES = {'BLENDER_RENDER'}
+
+    def draw(self, context):
+        layout = self.layout
+        scn = context.scene
+        col = layout.column(align=True)
+        box22 = layout.box()
+
+
         #Box to move back and forward between states
 
         box22.label(text="STATES")
+
+        col = box22.column(align = True)
+
+        row = col.row(align = True)
+        
+        row.prop(scn.my_tool, "total_states_info")
+
+        row.enabled = False 
 
         row_box = box22.row()
 
         row_box.prop(scn.my_tool, "int_box_state")
 
-        row_box.enabled = False    
+        row_box.enabled = True    
 
         row = box22.row()
 
@@ -397,13 +456,34 @@ class Panel(bpy.types.Panel):
 
 
 
+class PanelRenderData(bpy.types.Panel):
+    """Panel para añadir al entorno 3D"""
+    bl_label = "Rendering Panel"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'TOOLS'
+    COMPAT_ENGINES = {'BLENDER_RENDER'}
+
+    def draw(self, context):
+        layout = self.layout
+        scn = context.scene
+        col = layout.column(align=True)
+        box23 = layout.box()
+        box3 = layout.box()
+
+        box23.label(text="CAMERA OPTIONS")
+
+        box23.label(text="Camera predefs", icon='SCENE')
+
+        box23.operator("place.camera", text="Sets camera to Top")
+
+
         box3.label(text="RENDER")
 
-        box3.label(text="Select the folder to store renders")
+        box3.label(text="Select the folder to store renders", icon='FILE_FOLDER')
 
         box3.prop(scn.my_tool, "image_path", text="")
 
-        box3.label(text="Select the image format (PNG as default)", icon='SCENE')
+        box3.label(text="Select the image format (PNG as default)", icon='RENDER_STILL')
 
         box3.prop_search(context.scene, "ImageFormat", context.scene, "imageformats", text="" , icon='OBJECT_DATA')
 
@@ -417,12 +497,25 @@ class Panel(bpy.types.Panel):
 
         box3.operator("render.video", text="Save video")
 
+
+class PanelInfoShortcuts(bpy.types.Panel):
+    """Panel para añadir al entorno 3D"""
+    bl_label = "Information Panel"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'TOOLS'
+    COMPAT_ENGINES = {'BLENDER_RENDER'}
+
+    def draw(self, context):
+        layout = self.layout
+        scn = context.scene
+        col = layout.column(align=True)
+        box4 = layout.box()
+
         box4.label(text="SHORTCUTS")
 
         box4.label(text="To switch view press SHIFT + Z", icon='INFO')
 
         box4.label(text="To start the animation press ALT + A", icon='INFO')
-
 
 
         
@@ -605,7 +698,11 @@ class ParticleCalculator(bpy.types.Operator):
         except:
             bpy.context.window_manager.popup_menu(error_message, title="An error ocurred", icon='CANCEL')
 
-        N = len(array_3d[0])   #Size of the matrix
+        N = len(array_3d)   #Size of the matrix
+
+        #Sets the maximum state avaliable
+        bpy.context.scene.my_tool.total_states_info = N-1
+
 
         particles_number = bpy.data.scenes['Scene'].my_tool.int_box_n_particulas #Read from the panel 
         
@@ -855,7 +952,7 @@ class ParticlesForward(bpy.types.Operator):
 
         #Calculates the position of spheres in a state given
         def sphere_placement(state, array_3d):
-            actual_state = bpy.data.scenes["Scene"].my_tool.int_box_state 
+            actual_state = state
             particles_number = bpy.context.scene.my_tool.int_box_n_particulas
 
             x_pos = 0
@@ -910,20 +1007,22 @@ class ParticlesForward(bpy.types.Operator):
         #First time do this
         if(actual_state == -1):
             #Calculate the coordinates of each particle
-            sphere_placement(1, array_3d)
             bpy.data.scenes["Scene"].my_tool.int_box_state = 1
+            sphere_placement(1, array_3d)
+            
         
         else:
             #If is not the last state
             if((actual_state+1) < int(total_states)):
                 #Take the name of the Sphere to make the complete name and disable it
-                sphere_placement(actual_state+1, array_3d)
                 bpy.data.scenes["Scene"].my_tool.int_box_state = actual_state + 1
-            
+                sphere_placement(actual_state+1, array_3d)
+                
             #If its the last state 
-            if((actual_state+1) == int(total_states)):
-                sphere_placement(0, array_3d)
+            if((actual_state+1) >= int(total_states)):
                 bpy.data.scenes["Scene"].my_tool.int_box_state = 0
+                sphere_placement(0, array_3d)
+                
 
         #Goes one frame forward
         bpy.context.scene.frame_current = bpy.context.scene.frame_current + 1
@@ -1015,7 +1114,7 @@ class ParticlesBackward(bpy.types.Operator):
 
         #Calculates the position of spheres in a state given
         def sphere_placement(state, array_3d):
-            actual_state = bpy.data.scenes["Scene"].my_tool.int_box_state 
+            actual_state = state
             particles_number = bpy.context.scene.my_tool.int_box_n_particulas
 
             x_pos = 0
@@ -1070,19 +1169,19 @@ class ParticlesBackward(bpy.types.Operator):
 
         #First time do this
         if(actual_state == -1):
-            sphere_placement(total_states-1,array_3d)
             bpy.data.scenes["Scene"].my_tool.int_box_state = total_states - 1
-        
+            sphere_placement(total_states-1,array_3d)
+            
         else:
             #If is not the last state
             if((actual_state-1) >= 0):
-                sphere_placement(actual_state-1,array_3d)
                 bpy.data.scenes["Scene"].my_tool.int_box_state = actual_state - 1
+                sphere_placement(actual_state-1,array_3d)
 
             #If its the last state
             if((actual_state-1) < 0):
-                sphere_placement(total_states-1,array_3d)
                 bpy.data.scenes["Scene"].my_tool.int_box_state = total_states - 1
+                sphere_placement(total_states-1,array_3d)
 
 
         #Goes one frame forward
@@ -1142,7 +1241,7 @@ class ParticlesCalculation(bpy.types.Operator):
             bpy.context.window_manager.popup_menu(error_message, title="An error ocurred", icon='CANCEL')
     
         #number of 3D points for each step
-        number_of_points=30000
+        number_of_points=bpy.context.scene.my_tool.int_box_particulas_Simulacion
         #3D matrix creation
         matrix_3d = np.zeros((psi_files_number,number_of_points,4))
 
