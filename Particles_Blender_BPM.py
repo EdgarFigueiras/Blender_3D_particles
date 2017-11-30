@@ -95,7 +95,7 @@ class MySettings(PropertyGroup):
         default = 100000)
 
     int_box_n_particulas = IntProperty(
-        name="Particles N ", 
+        name="Particles to show ", 
         description="Total number of particles of the simulation",
         min = 50, max = 10000000,
         default = 100000)
@@ -334,11 +334,27 @@ class OBJECT_OT_CameraPlacement(bpy.types.Operator):
 
     def execute(self, context):
 
-        nombreObjeto = "Camera"  
+        object_name = "Camera"  
 
-        bpy.data.objects[nombreObjeto].location=(0,0,300)
-        bpy.data.objects[nombreObjeto].rotation_euler=(0,0,0)
-        bpy.data.objects[nombreObjeto].data.clip_end=1000
+        bpy.data.objects[object_name].location=(0,0,300)
+        bpy.data.objects[object_name].rotation_euler=(0,0,0)
+        bpy.data.objects[object_name].data.clip_end=1000
+
+
+        return{'FINISHED'} 
+
+class OBJECT_OT_CameraPlacement2(bpy.types.Operator):
+    bl_idname = "place.camera2"
+    bl_label = "Camera management2"
+    country = bpy.props.StringProperty()
+
+    def execute(self, context):
+
+        object_name = "Camera"  
+
+        bpy.data.objects[object_name].location=(0,-500,440)
+        bpy.data.objects[object_name].rotation_euler=(0.872665,0,0)
+        bpy.data.objects[object_name].data.clip_end=1000
 
 
         return{'FINISHED'} 
@@ -372,7 +388,7 @@ class PanelSimulation(bpy.types.Panel):
 
         box0.prop(scn.my_tool, "folder_path", text="")
 
-        box0.label(text="Particles of each step for the simulation", icon='PARTICLE_DATA')
+        box0.label(text="Total particles number", icon='PARTICLE_DATA')
 
         box0.prop(scn.my_tool, "int_box_particulas_Simulacion")
 
@@ -476,6 +492,8 @@ class PanelRenderData(bpy.types.Panel):
 
         box23.operator("place.camera", text="Sets camera to Top")
 
+        box23.operator("place.camera2", text="Sets camera 50º angle")
+
 
         box3.label(text="RENDER")
 
@@ -516,6 +534,8 @@ class PanelInfoShortcuts(bpy.types.Panel):
         box4.label(text="To switch view press SHIFT + Z", icon='INFO')
 
         box4.label(text="To start the animation press ALT + A", icon='INFO')
+
+        box4.label(text="To modify grid values F6", icon='INFO')
 
 
         
@@ -837,7 +857,8 @@ class ParticlesStabilizer(bpy.types.Operator):
         if (actual_state == -1):
             actual_state=0
 
-        emitter = bpy.context.object  
+        object_name = "Sphere"  
+        emitter = bpy.data.objects[object_name]  
         psys1 = emitter.particle_systems[-1]
 
         for pa in psys1.particles:
@@ -962,8 +983,8 @@ class ParticlesForward(bpy.types.Operator):
             prob = 0
             cont = 0
 
-
-            emitter = bpy.context.object  
+            object_name = "Sphere"  
+            emitter = bpy.data.objects[object_name]  
             psys1 = emitter.particle_systems[-1]
 
             for pa in psys1.particles:
@@ -1125,7 +1146,8 @@ class ParticlesBackward(bpy.types.Operator):
             cont = 0
 
 
-            emitter = bpy.context.object  
+            object_name = "Sphere"  
+            emitter = bpy.data.objects[object_name]  
             psys1 = emitter.particle_systems[-1]
 
             for pa in psys1.particles:
