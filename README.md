@@ -25,6 +25,6 @@ Matrix[0][0][3]= probability of the particle 0 of the state 0
 
 Explanation of how to use the panel
 
-https://user-images.githubusercontent.com/32951347/33916749-a07273ce-dfaa-11e7-8ae8-d5f3ee9afda7.png
+![alt tag](https://user-images.githubusercontent.com/32951347/33916749-a07273ce-dfaa-11e7-8ae8-d5f3ee9afda7.png)
 
 https://user-images.githubusercontent.com/32951347/33916751-a4140772-dfaa-11e7-80dc-bff9b653ac9c.png
