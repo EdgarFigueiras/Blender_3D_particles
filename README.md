@@ -1,11 +1,5 @@
 # Blender_3D_particles
 
-How to use
-
-https://user-images.githubusercontent.com/32951347/33916749-a07273ce-dfaa-11e7-8ae8-d5f3ee9afda7.png
-
-
-
 Package for Blender to represent data from a 3D Numpy Array (Matrix).
 
 The system is made to work with 3D matrix with the following structure:
@@ -27,3 +21,10 @@ Matrix[0][0][1]= y position of the particle 0 of the state 0
 Matrix[0][0][2]= z position of the particle 0 of the state 0
 
 Matrix[0][0][3]= probability of the particle 0 of the state 0
+
+
+Explanation of how to use the panel
+
+https://user-images.githubusercontent.com/32951347/33916749-a07273ce-dfaa-11e7-8ae8-d5f3ee9afda7.png
+
+https://user-images.githubusercontent.com/32951347/33916751-a4140772-dfaa-11e7-80dc-bff9b653ac9c.png
