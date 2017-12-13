@@ -54,6 +54,11 @@ video_format = (
     ('THEORA', 'THEORA', '')
 )
 
+calculation_format = (
+    ('2D', '2D', ''),
+    ('3D', '3D', '')
+)
+
 enum_items = (
     ('FOO', 'Foo', ''),
     ('BAR', 'Bar', '')
@@ -91,13 +96,13 @@ class MySettings(PropertyGroup):
     int_box_particulas_Simulacion = IntProperty(
         name="Simulation particles", 
         description="Total number of particles for generating the matrix",
-        min = 10000, max = 10000000,
+        min = 1000, max = 10000000,
         default = 100000)
 
     int_box_n_particulas = IntProperty(
         name="Particles to show ", 
         description="Total number of particles of the simulation",
-        min = 50, max = 10000000,
+        min = 1000, max = 10000000,
         default = 100000)
 
     int_box_granularity = IntProperty(
@@ -237,7 +242,7 @@ class OBJECT_OT_RenderAllButton(bpy.types.Operator):
             bpy.context.window_manager.popup_menu(error_message, title="An error ocurred", icon='CANCEL')
 
 
-        for x in range(int(total_states)-1):
+        for x in range(int(total_states)):
 
             try:    
                 #Set the image format, PNG by default
@@ -358,7 +363,7 @@ class OBJECT_OT_CameraPlacement2(bpy.types.Operator):
 
 
         return{'FINISHED'} 
-      
+
 
 
 class OBJECT_PT_my_panel(Panel):
@@ -387,6 +392,10 @@ class PanelSimulation(bpy.types.Panel):
         box0.label(text="Select the folder with the data", icon='FILE_FOLDER')
 
         box0.prop(scn.my_tool, "folder_path", text="")
+
+        box0.label(text="Select the type of psi matrix (2D by default)", icon='SETTINGS')
+
+        box0.prop_search(context.scene, "CalculationFormat", context.scene, "calculationformats", text="" , icon='OBJECT_DATA')
 
         box0.label(text="Total particles number", icon='PARTICLE_DATA')
 
@@ -501,7 +510,7 @@ class PanelRenderData(bpy.types.Panel):
 
         box3.prop(scn.my_tool, "image_path", text="")
 
-        box3.label(text="Select the image format (PNG as default)", icon='RENDER_STILL')
+        box3.label(text="Select the image format (PNG by default)", icon='RENDER_STILL')
 
         box3.prop_search(context.scene, "ImageFormat", context.scene, "imageformats", text="" , icon='OBJECT_DATA')
 
@@ -509,7 +518,7 @@ class PanelRenderData(bpy.types.Panel):
 
         box3.operator("render_all.image", text="Save all images")
 
-        box3.label(text="Select the video format (AVI as default)", icon='RENDER_ANIMATION')
+        box3.label(text="Select the video format (AVI by default)", icon='RENDER_ANIMATION')
 
         box3.prop_search(context.scene, "VideoFormat", context.scene, "videoformats", text="" , icon='OBJECT_DATA')
 
@@ -549,12 +558,16 @@ def rellenar_selectores(scene):
     bpy.app.handlers.scene_update_pre.remove(rellenar_selectores)
     scene.imageformats.clear()
     scene.videoformats.clear()
+    scene.calculationformats.clear()
 
     for identifier, name, description in image_format:
         scene.imageformats.add().name = name
 
     for identifier, name, description in video_format:
         scene.videoformats.add().name = name
+
+    for identifier, name, description in calculation_format:
+        scene.calculationformats.add().name = name
 
 
 def register():
@@ -568,9 +581,15 @@ def register():
             type=bpy.types.PropertyGroup
         )
 
+    bpy.types.Scene.calculationformats = bpy.props.CollectionProperty(
+            type=bpy.types.PropertyGroup
+        )
+
     bpy.types.Scene.ImageFormat = bpy.props.StringProperty()
 
     bpy.types.Scene.VideoFormat = bpy.props.StringProperty()
+
+    bpy.types.Scene.CalculationFormat = bpy.props.StringProperty()
 
     bpy.app.handlers.scene_update_pre.append(rellenar_selectores)
 
@@ -1250,14 +1269,25 @@ class ParticlesCalculation(bpy.types.Operator):
         def error_message(self, context):
             self.layout.label("Imposible to read psi data from the selected folder.")
 
+        #Set the calculation format, 2D by default
+        calculation_format_final = bpy.data.scenes["Scene"].CalculationFormat
+        if (calculation_format_final == ''):
+            calculation_format_final = '2D'
         #Takes the data from the folder with all psi files
         try:
             path = bpy.data.scenes['Scene'].my_tool.folder_path #Origin from where the data will be readen, selected by the first option in the Panel
             
             psi_files_number=0
 
-            while (os.path.isfile(path+ str(psi_files_number) +"psi")):
-                psi_files_number += 1
+            if (calculation_format_final == '2D'):
+                while (os.path.isfile(path+ str(psi_files_number) +"psi")):
+                    psi_files_number += 1
+
+            if (calculation_format_final == '3D'):
+                while (os.path.isfile(path+ "psi_" + str(psi_files_number) + ".pkl")):
+                    psi_files_number += 1
+            
+
 
         except:
             bpy.context.window_manager.popup_menu(error_message, title="An error ocurred", icon='CANCEL')
@@ -1269,19 +1299,41 @@ class ParticlesCalculation(bpy.types.Operator):
 
         #Data storage matrix
         array_aux = np.zeros((number_of_points, 4))
+ 
 
         path=bpy.data.scenes['Scene'].my_tool.folder_path
-        for cont_file in range(0, psi_files_number):
 
-            file_with_binary_data = open(path+ str(cont_file) +"psi", 'rb+') #File with binary data
 
-            array_with_all_data = np.load(file_with_binary_data) #Gets the binary data as an array with 6 vectors (x_data, x_probability, y_data, y_probability, z_data, z_probability)
+        #2D calculation    
+        if (calculation_format_final == '2D'):
+            for cont_file in range(0, psi_files_number):
 
-            #Matrix with the data of the 2D grid
-            Z = array_with_all_data['arr_0'] 
+                file_with_binary_data = open(path+ str(cont_file) +"psi", 'rb+') #File with binary data
 
-            cArray.matrix2Dprob(Z, array_aux)
-            matrix_3d[cont_file]=array_aux
+                array_with_all_data = np.load(file_with_binary_data) #Gets the binary data as an array with 6 vectors (x_data, x_probability, y_data, y_probability, z_data, z_probability)
+
+                #Matrix with the data of the 2D grid
+                Z = array_with_all_data['arr_0'] 
+                
+                cArray.matrix2Dprob(Z, array_aux)
+
+                matrix_3d[cont_file]=array_aux
+
+        #3D calculation 
+        if (calculation_format_final == '3D'):
+            for cont_file in range(0, psi_files_number):
+
+                file_with_binary_data = open(path+ "psi_" + str(cont_file) + ".pkl", 'rb+') #File with binary data
+
+                array_with_all_data = np.load(file_with_binary_data) #Gets the binary data as an array with 6 vectors (x_data, x_probability, y_data, y_probability, z_data, z_probability)
+
+                #Matrix with the data of the 3D grid
+                Z = array_with_all_data['arr_0'] 
+
+                cArray.matrix3Dprob(Z, array_aux)
+
+                matrix_3d[cont_file]=array_aux
+
         
         f = open(path + '3dData.3d', 'wb+')
         np.savez(f, matrix_3d)
