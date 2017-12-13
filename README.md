@@ -1,5 +1,11 @@
 # Blender_3D_particles
 
+How to use
+
+https://user-images.githubusercontent.com/32951347/33916749-a07273ce-dfaa-11e7-8ae8-d5f3ee9afda7.png
+
+
+
 Package for Blender to represent data from a 3D Numpy Array (Matrix).
 
 The system is made to work with 3D matrix with the following structure:
