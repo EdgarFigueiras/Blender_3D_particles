@@ -2,6 +2,12 @@
 
 Package for Blender to represent data from a 3D Numpy Array (Matrix).
 
+Explanation of how to use the panel
+
+![alt tag](https://user-images.githubusercontent.com/32951347/33916749-a07273ce-dfaa-11e7-8ae8-d5f3ee9afda7.png)
+
+![alt tag](https://user-images.githubusercontent.com/32951347/33916751-a4140772-dfaa-11e7-80dc-bff9b653ac9c.png)
+
 The system is made to work with 3D matrix with the following structure:
 
 Matrix[number_of_state][number_of_particle][axis]
@@ -21,3 +27,4 @@ Matrix[0][0][1]= y position of the particle 0 of the state 0
 Matrix[0][0][2]= z position of the particle 0 of the state 0
 
 Matrix[0][0][3]= probability of the particle 0 of the state 0
+
