@@ -130,6 +130,95 @@ class MySettings(PropertyGroup):
 # ----------------------------------------------------------------------- #
 #*************************************************************************# 
 
+class OBJECT_OT_AddColors(bpy.types.Operator):
+    bl_idname = "add.colors"
+    bl_label = "Add colors"
+    country = bpy.props.StringProperty()
+
+    def execute(self, context):
+
+        #TODO Set the number of particles for each step reading the data from the original file, 
+        #remember to set 10 steps using the 10% of the biggest probability value
+        #also you will have to use the dupli_weights list of values to iterate over it when the key changes because te 
+        #number of particles
+        #Define an error message if occurs a problem during the run, is showed using a popup 
+        def error_message(self, context):
+            self.layout.label("Error opening the original array data")
+
+        try:
+            path = bpy.data.scenes['Scene'].my_tool.path #Origin from where the data will be readen, selected by the first option in the Panel
+       
+            file_with_binary_data = open(path, 'rb+') #File with binary data
+
+            array_with_all_data = np.load(file_with_binary_data) #Gets the binary data as an array with 6 vectors (x_data, x_probability, y_data, y_probability, z_data, z_probability)
+       
+            #Matrix with the data of the 2D grid
+            array_3d = array_with_all_data['arr_0'] 
+
+        except:
+            bpy.context.window_manager.popup_menu(error_message, title="An error ocurred", icon='CANCEL')
+
+        particles_number = bpy.data.scenes['Scene'].my_tool.int_box_n_particulas
+
+        #Use an auxiliar array to work with a variable number of points, 
+        #allowing the user to make diferent points simulation with good results
+        array_aux = np.zeros((particles_number, 4))
+        #Fill the auxiliar array with the data of the original one 
+        for point_number in range (0, particles_number):
+            array_aux[point_number] = array_3d[0][point_number]
+
+        #Sort the array to place first the particles with more probability
+        array_aux = array_aux[np.argsort(array_aux[:,3])]
+
+
+        #With the array sorted the last position is the particle with the biggest probability to appear
+        actual_max_prob_value = array_aux[particles_number-1][3]
+        #With the array sorted the first position is the particle with less probability to appear
+        actual_min_prob_value = array_aux[0][3]
+
+        general_maximum = actual_max_prob_value
+        general_minimum = actual_min_prob_value
+
+        for state_array in array_3d:
+            maxi = np.max(state_array[:,3])
+            mini = np.max(state_array[:,3])
+
+            if (maxi > general_maximum):
+                general_maximum = maxi
+            if (mini < general_minimum):
+                general_minimum = mini
+
+        f = open("/Users/edgarfigueiras/Desktop/" + 'particles_data.txt', 'w+')
+        f.write("Max: " + str(array_aux[particles_number-1][3]) +  " - general_maximum: " + str(general_maximum) +"\r\n")
+        f.write("Min: " + str(array_aux[0][3]) +  " - general_minimum: " + str(general_minimum) +"\r\n")
+        f.close()
+
+
+        #Obtain an scalated step to distribute the points between the 10 scales of probability
+        step_prob = (general_maximum-general_minimum)/10
+        prob_using = step_prob
+
+        steps = np.zeros(11)
+        actual_step = 0
+
+        for cont_particle in range(particles_number):
+            if(array_aux[cont_particle][3] < prob_using):
+                steps[9-actual_step] += 1
+            else:
+                actual_step += 1
+                prob_using += step_prob 
+
+        #solves the problem with the extra particles not asigned to the last position
+        steps[9] += steps[10]
+
+        bpy.data.objects['Sphere'].select = True
+        bpy.context.scene.objects.active = bpy.data.objects['Sphere']
+        for cont_mat in range(10):
+            material_value = bpy.data.objects['Sphere'].particle_systems['Drops'].settings.dupli_weights.get("Ico_"+str(cont_mat)+": 1")
+            material_value.count = steps[cont_mat]
+
+        return{'FINISHED'} 
+
 class OBJECT_OT_ResetButton(bpy.types.Operator):
     bl_idname = "reset.image"
     bl_label = "Reiniciar entorno"
@@ -361,7 +450,6 @@ class OBJECT_OT_CameraPlacement2(bpy.types.Operator):
         bpy.data.objects[object_name].rotation_euler=(0.872665,0,0)
         bpy.data.objects[object_name].data.clip_end=1000
 
-
         return{'FINISHED'} 
 
 
@@ -435,6 +523,8 @@ class PanelDataSelection(bpy.types.Panel):
         box2.label(text="SIMULATION")
 
         box2.operator("particle.calculator", text="Place Particles")
+
+        box2.operator("add.colors", text="Add Colors")
 
         box2.operator("reset.image", text="Reset Environment")
 
@@ -636,83 +726,43 @@ class ParticleCalculator(bpy.types.Operator):
             if (x >= 100) :
                 emitter = bpy.data.objects['Sphere.' + str(x)]
             return emitter
-
-        
-        #Vortex
-        def size_prob(prob):
-            size = 0.10
-            if (prob > 0.05):
-                size = 0.55
-            if (prob <= 0.05 and prob > 0.02):
-                size = 0.48     
-            if (prob <= 0.02 and prob > 0.005):
-                size = 0.34  
-            if (prob <= 0.005):
-                size = 0.25      
-            return size 
-
-
-        def material_prob(prob):
-            #Fixes the brightness according to the probability of appearing, 
-            # helps to improve the visual final effect
-            if (prob > 0.05):
-                mat = bpy.data.materials['m1']
-            if (prob <= 0.05 and prob > 0.02):
-                mat = bpy.data.materials['m2']  
-            if (prob <= 0.02 and prob > 0.005):
-                mat = bpy.data.materials['m3']
-            if (prob <= 0.005):
-                mat = bpy.data.materials['m4']   
-            return mat    
             
-        def configure_particles(psys1):  
-            # Emission    
-            pset1 = psys1.settings
-            pset1.name = 'DropSettings'
-            pset1.normal_factor = 0.0
-            pset1.object_factor = 1
-            pset1.factor_random = 0
-            pset1.frame_start = bpy.context.scene.frame_current
-            pset1.frame_end = bpy.context.scene.frame_current + 1
-            pset1.lifetime = 500
-            pset1.lifetime_random = 0
-            pset1.emit_from = 'FACE'
-            pset1.use_render_emitter = False
-            pset1.object_align_factor = (0,0,0)
-         
-            pset1.count = particles_number    #number of particles that will be created with their own style
 
-            # Velocity
-            pset1.normal_factor = 0.0
-            pset1.factor_random = 0.0
-         
-            # Physics
-            pset1.physics_type = 'NEWTON'
-            pset1.mass = 0
-            pset1.particle_size = 5
-            pset1.use_multiply_size_mass = False
-         
-            # Effector weights
-            ew = pset1.effector_weights
-            ew.gravity = 0
-            ew.wind = 0
-         
-            # Children
-            pset1.child_nbr = 0
-            pset1.rendered_child_count = 0
-            pset1.child_type = 'NONE'
-         
-            # Display and render
-            pset1.draw_percentage = 100
-            pset1.draw_method = 'CIRC'
-            pset1.material = 1
-            pset1.particle_size = 5  
-            pset1.render_type = 'HALO'
-            pset1.render_step = 0  
+        #Creating the Icospheres that will give the particles the color gradiations as an origin of the material
+        #Takes as input the materials vector
+        def ico_creation(materials_vector): 
+            number_of_icos=10 #10 plus the extra
+            #First Ico and Group creation
+            bpy.ops.mesh.primitive_ico_sphere_add(view_align=False, enter_editmode=False, location=(2, 2, -99), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+            bpy.context.object.name = "Ico_0"
+            bpy.ops.object.group_add()
+            bpy.data.groups["Group"].name = "Ico"
+            bpy.ops.object.group_link(group='Ico')
+            bpy.context.object.scale = (0.0001, 0.0001, 0.0001)
+            bpy.context.active_object.active_material=materials_vector[0]
+
+            #Icos iterative creation
+            for cont in range(1, number_of_icos):
+                bpy.ops.mesh.primitive_ico_sphere_add(view_align=False, enter_editmode=False, location=(2, 2, -100 + (-1*cont)), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+                bpy.context.object.name = "Ico_" + str(cont)
+                bpy.ops.object.group_link(group='Ico')
+                bpy.context.object.scale = (0.0001, 0.0001, 0.0001)
+                bpy.context.active_object.active_material=materials_vector[cont]
+
+           #Extra Ico for ordenation purpouses 
+            bpy.ops.mesh.primitive_ico_sphere_add(view_align=False, enter_editmode=False, location=(2, 2, -111), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+            bpy.context.object.name = "Ico_9_extra"
+            bpy.ops.object.group_link(group='Ico')
+            bpy.context.object.scale = (0.0001, 0.0001, 0.0001)
 
         #Define an error message if occurs a problem during the run, is showed using a popup 
         def error_message(self, context):
             self.layout.label("No datafile selected. Remember to select a compatible datafile")
+
+        #Delete all the old materials    
+        for material in bpy.data.materials:
+            material.user_clear();
+            bpy.data.materials.remove(material);
 
         bpy.context.space_data.viewport_shade = 'MATERIAL'
         bpy.ops.object.select_by_type(type='MESH')
@@ -746,33 +796,121 @@ class ParticleCalculator(bpy.types.Operator):
         particles_number = bpy.data.scenes['Scene'].my_tool.int_box_n_particulas #Read from the panel 
         
 
-        #Set the world color to black
-        bpy.context.scene.world.horizon_color = (0, 0, 0)
+        #Set the world color 
+        #bpy.context.scene.world.horizon_color = (0, 0, 0)
+        bpy.context.scene.world.horizon_color = (0.0041, 0.0087, 0.145)
+        bpy.context.scene.world.light_settings.use_environment_light = True
+        #Set the light propertyes
+        bpy.data.objects['Lamp'].data.type = 'SUN'
+        bpy.data.objects['Lamp'].location = (0,0,10)
+        bpy.data.objects['Lamp'].rotation_euler = (0,0,10)
 
         #Emitter object, father of the particles
-        ob = bpy.ops.mesh.primitive_uv_sphere_add(size=0.2, location=(0,0,0))
+        ob = bpy.ops.mesh.primitive_uv_sphere_add(size=0.2, location=(0,0,-10000))
+        bpy.context.object.scale = (0.0001, 0.0001, 0.0001)
         emitter = bpy.context.object
 
         bpy.ops.object.particle_system_add()    
         psys1 = emitter.particle_systems[-1]
                     
-        psys1.name = 'Drops'
+        psys1.name = 'Drops' 
+
+        #Create materials
+        #Creating the 10 materials to make the degradation
+        mat_bur = bpy.data.materials.new('Burdeaux')
+        mat_bur.diffuse_color = (0.174563, 0.004221, 0.0208302)
+        mat_bur.type='SURFACE'
+
+        mat_red = bpy.data.materials.new('Red')
+        mat_red.diffuse_color = (0.8, 0, 0.0414922)
+        mat_red.type='SURFACE'
+
+        mat_ora = bpy.data.materials.new('Orange')
+        mat_ora.diffuse_color = (0.8, 0, 0.0568561)
+        mat_ora.type='SURFACE'
+
+        mat_pap = bpy.data.materials.new('Papaya')
+        mat_pap.diffuse_color = (0.8, 0.40282, 0)
+        mat_pap.type='SURFACE'
+
+        mat_lim = bpy.data.materials.new('Lima')
+        mat_lim.diffuse_color = (0.517173, 0.8, 0)
+        mat_lim.type='SURFACE'
+
+        mat_gre = bpy.data.materials.new('Green')
+        mat_gre.diffuse_color = (0.188, 0.8, 0)
+        mat_gre.type='SURFACE'
+
+        mat_tur = bpy.data.materials.new('Turquoise')
+        mat_tur.diffuse_color = (0.006, 0.8, 0.366286)
+        mat_tur.type='SURFACE'
+
+        mat_sky = bpy.data.materials.new('Skyline')
+        mat_sky.diffuse_color = (0, 0.266361, 0.8)
+        mat_sky.type='SURFACE'
+
+        mat_blu = bpy.data.materials.new('Blue')
+        mat_blu.diffuse_color = (0.001, 0.0521, 0.8)
+        mat_blu.type='SURFACE'
+
+        mat_dar = bpy.data.materials.new('DarkBlue')
+        mat_dar.diffuse_color = (0.017, 0, 0.8)
+        mat_dar.type='SURFACE'
+
+        materials_vector = ([mat_bur, mat_red, mat_ora, mat_pap, mat_lim, mat_gre, mat_tur, mat_sky, mat_blu, mat_dar])
+
+        
+        #Creating the Icospheres that will give the particles the color gradiations as an origin of the material
+        ico_creation(materials_vector)
+
+        psys1 = bpy.data.objects['Sphere'].particle_systems[-1]
 
         #Sets the configuration for the particle system of each emitter
-        configure_particles(psys1)
-           
+        #configure_particles(psys1)
+        psys1.settings.frame_start=bpy.context.scene.frame_current
+        psys1.settings.frame_end=bpy.context.scene.frame_current+1
+        psys1.settings.lifetime=1000
+        psys1.settings.count = particles_number 
+
+        psys1.settings.render_type='GROUP'
+        psys1.settings.dupli_group=bpy.data.groups["Ico"]
+        psys1.settings.use_group_count = True
+
+        psys1.settings.normal_factor = 0.0
+        psys1.settings.factor_random = 0.0
+     
+        # Physics
+        psys1.settings.physics_type = 'NEWTON'
+        psys1.settings.mass = 0
+        psys1.settings.particle_size = 1000 #Remember the object scale 0.0001 of the icospheres to not be showed in the visualization
+        psys1.settings.use_multiply_size_mass = False
+     
+        # Effector weights
+        ew = psys1.settings.effector_weights
+        ew.gravity = 0
+        ew.wind = 0
+
+
         nombreMesh = "Figura" + str(0)
         me = bpy.data.meshes.new(nombreMesh)
 
         psys1 = emitter.particle_systems[-1] 
-
-        #bpy.data.particles['ParticleSystem 1'].count=particles_number
 
         x_pos = 0
         y_pos = 0
         z_pos = 0
         prob = 0
         cont = 0
+
+        #Use an auxiliar array to work with a variable number of points, 
+        #allowing the user to make diferent points simulation with good results
+        array_aux = np.zeros((particles_number, 4))
+        #Fill the auxiliar array with the data of the original one 
+        for point_number in range (0, particles_number):
+            array_aux[point_number] = array_3d[0][point_number]
+
+        #Sort the array to place first the particles with more probability
+        array_aux = array_aux[np.argsort(array_aux[:,3])]
 
         for pa in psys1.particles:
             #God´s particle solution
@@ -781,11 +919,11 @@ class ParticleCalculator(bpy.types.Operator):
             pa.lifetime = 500
             pa.velocity = (0,0,0)
             #3D placement
-            x_pos = array_3d[0][cont][0] 
-            y_pos = array_3d[0][cont][1] 
-            z_pos = array_3d[0][cont][2]
+            x_pos = array_aux[cont][0] 
+            y_pos = array_aux[cont][1] 
+            z_pos = array_aux[cont][2]
             pa.location = (x_pos,y_pos,z_pos)
-            prob = array_3d[0][cont][3] 
+            prob = array_aux[cont][3] 
             cont += 1 
         
         bpy.context.scene.frame_current = bpy.context.scene.frame_current + 1   #Goes one frame forward to show particles clear at rendering MANDATORY
@@ -878,8 +1016,18 @@ class ParticlesStabilizer(bpy.types.Operator):
 
         object_name = "Sphere"  
         emitter = bpy.data.objects[object_name]  
-        psys1 = emitter.particle_systems[-1]
+        psys1 = emitter.particle_systems[-1] 
 
+        particles_number = bpy.data.scenes['Scene'].my_tool.int_box_n_particulas
+
+        #Use an auxiliar array to work with a variable number of points, 
+        #allowing the user to make diferent points simulation with good results
+        array_aux = np.zeros((particles_number, 4))
+        #Fill the auxiliar array with the data of the original one
+        for point_number in range (0, particles_number):
+            array_aux[point_number] = array_3d[actual_state][point_number]
+
+        array_aux = array_aux[np.argsort(array_aux[:,3])]
         for pa in psys1.particles:
             #God´s particle solution
             #if pa.die_time < 500 :
@@ -887,11 +1035,11 @@ class ParticlesStabilizer(bpy.types.Operator):
             pa.lifetime = 500
             pa.velocity = (0,0,0)
             #3D placement
-            x_pos = array_3d[actual_state][cont][0] 
-            y_pos = array_3d[actual_state][cont][1] 
-            z_pos = array_3d[actual_state][cont][2]
+            x_pos = array_aux[cont][0] 
+            y_pos = array_aux[cont][1] 
+            z_pos = array_aux[cont][2]
             pa.location = (x_pos,y_pos,z_pos)
-            prob = array_3d[actual_state][cont][3] 
+            prob = array_aux[cont][3] 
             cont += 1 
 
 
@@ -963,32 +1111,6 @@ class ParticlesForward(bpy.types.Operator):
                 emitter = bpy.data.objects['Sphere.' + str(x)]
             return emitter
 
-        #Vortex
-        def size_prob(prob):
-            size = 0.10
-            if (prob > 0.05):
-                size = 0.55
-            if (prob <= 0.05 and prob > 0.02):
-                size = 0.48     
-            if (prob <= 0.02 and prob > 0.005):
-                size = 0.34  
-            if (prob <= 0.005):
-                size = 0.25      
-            return size 
-
-
-        def material_prob(prob):
-            #Fixes the brightness according to the probability of appearing, 
-            # helps to improve the visual final effect
-            if (prob > 0.05):
-                mat = bpy.data.materials['m1']
-            if (prob <= 0.05 and prob > 0.02):
-                mat = bpy.data.materials['m2']  
-            if (prob <= 0.02 and prob > 0.005):
-                mat = bpy.data.materials['m3']
-            if (prob <= 0.005):
-                mat = bpy.data.materials['m4']   
-            return mat    
 
         #Calculates the position of spheres in a state given
         def sphere_placement(state, array_3d):
@@ -1006,6 +1128,61 @@ class ParticlesForward(bpy.types.Operator):
             emitter = bpy.data.objects[object_name]  
             psys1 = emitter.particle_systems[-1]
 
+
+
+            #Use an auxiliar array to work with a variable number of points, 
+            #allowing the user to make diferent points simulation with good results
+            array_aux = np.zeros((particles_number, 4))
+            #Fill the auxiliar array with the data of the original one 
+            for point_number in range (0, particles_number):
+                array_aux[point_number] = array_3d[actual_state][point_number]
+
+            #Sort the array to place first the particles with more probability
+            array_aux = array_aux[np.argsort(array_aux[:,3])]
+
+            #With the array sorted the last position is the particle with the biggest probability to appear
+            actual_max_prob_value = array_aux[particles_number-1][3]
+            #With the array sorted the first position is the particle with less probability to appear
+            actual_min_prob_value = array_aux[0][3]
+
+            general_maximum = actual_max_prob_value
+            general_minimum = actual_min_prob_value
+
+            for state_array in array_3d:
+                maxi = np.max(state_array[:,3])
+                mini = np.max(state_array[:,3])
+
+                if (maxi > general_maximum):
+                    general_maximum = maxi
+                if (mini < general_minimum):
+                    general_minimum = mini
+
+            #Obtain an scalated step to distribute the points between the 10 scales of probability
+            step_prob = (general_maximum-general_minimum)/10
+            prob_using = step_prob
+
+            steps = np.zeros(11)
+            actual_step = 0
+
+            for cont_particle in range(particles_number):
+                if(array_aux[cont_particle][3] < prob_using):
+                    steps[9-actual_step] += 1
+                else:
+                    actual_step += 1
+                    prob_using += step_prob 
+
+            #solves the problem with the extra particles not asigned to the last position
+            steps[9] += steps[10]
+
+            bpy.data.objects['Sphere'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['Sphere']
+            for cont_mat in range(10):
+                #Avoid the Ico9_extra problem using "9-""
+                bpy.data.objects['Sphere'].particle_systems['Drops'].settings.active_dupliweight_index = 9-cont_mat
+                dupli_weights_name = bpy.data.objects['Sphere'].particle_systems['Drops'].settings.active_dupliweight.name
+                material_value = bpy.data.objects['Sphere'].particle_systems['Drops'].settings.dupli_weights.get(dupli_weights_name)
+                material_value.count = steps[cont_mat]
+
             for pa in psys1.particles:
                 #God´s particle solution
                 #if pa.die_time < 500 :
@@ -1013,15 +1190,14 @@ class ParticlesForward(bpy.types.Operator):
                 pa.lifetime = 500
                 pa.velocity = (0,0,0)
                 #3D placement
-                x_pos = array_3d[actual_state][cont][0] 
-                y_pos = array_3d[actual_state][cont][1] 
-                z_pos = array_3d[actual_state][cont][2]
+                x_pos = array_aux[cont][0] 
+                y_pos = array_aux[cont][1] 
+                z_pos = array_aux[cont][2]
                 pa.location = (x_pos,y_pos,z_pos)
-                prob = array_3d[actual_state][cont][3] 
+                prob = array_aux[cont][3] 
                 cont += 1 
 
             bpy.ops.particle.stabilizer()
-
 
         #Take the actual state
         actual_state = bpy.data.scenes["Scene"].my_tool.int_box_state
@@ -1124,33 +1300,7 @@ class ParticlesBackward(bpy.types.Operator):
             if (x >= 100) :
                 emitter = bpy.data.objects['Sphere.' + str(x)]
             return emitter
-
-        #Vortex
-        def size_prob(prob):
-            size = 0.10
-            if (prob > 0.05):
-                size = 0.55
-            if (prob <= 0.05 and prob > 0.02):
-                size = 0.48     
-            if (prob <= 0.02 and prob > 0.005):
-                size = 0.34  
-            if (prob <= 0.005):
-                size = 0.25      
-            return size 
-
-
-        def material_prob(prob):
-            #Fixes the brightness according to the probability of appearing, 
-            # helps to improve the visual final effect
-            if (prob > 0.05):
-                mat = bpy.data.materials['m1']
-            if (prob <= 0.05 and prob > 0.02):
-                mat = bpy.data.materials['m2']  
-            if (prob <= 0.02 and prob > 0.005):
-                mat = bpy.data.materials['m3']
-            if (prob <= 0.005):
-                mat = bpy.data.materials['m4']   
-            return mat   
+ 
 
         #Calculates the position of spheres in a state given
         def sphere_placement(state, array_3d):
@@ -1164,10 +1314,63 @@ class ParticlesBackward(bpy.types.Operator):
             prob = 0
             cont = 0
 
-
             object_name = "Sphere"  
             emitter = bpy.data.objects[object_name]  
             psys1 = emitter.particle_systems[-1]
+
+
+            #Use an auxiliar array to work with a variable number of points, 
+            #allowing the user to make diferent points simulation with good results
+            array_aux = np.zeros((particles_number, 4))
+            #Fill the auxiliar array with the data of the original one 
+            for point_number in range (0, particles_number):
+                array_aux[point_number] = array_3d[actual_state][point_number]
+
+            #Sort the array to place first the particles with more probability
+            array_aux = array_aux[np.argsort(array_aux[:,3])]
+
+            #With the array sorted the last position is the particle with the biggest probability to appear
+            actual_max_prob_value = array_aux[particles_number-1][3]
+            #With the array sorted the first position is the particle with less probability to appear
+            actual_min_prob_value = array_aux[0][3]
+
+            general_maximum = actual_max_prob_value
+            general_minimum = actual_min_prob_value
+
+            for state_array in array_3d:
+                maxi = np.max(state_array[:,3])
+                mini = np.max(state_array[:,3])
+
+                if (maxi > general_maximum):
+                    general_maximum = maxi
+                if (mini < general_minimum):
+                    general_minimum = mini
+
+            #Obtain an scalated step to distribute the points between the 10 scales of probability
+            step_prob = (general_maximum-general_minimum)/10
+            prob_using = step_prob
+
+            steps = np.zeros(11)
+            actual_step = 0
+
+            for cont_particle in range(particles_number):
+                if(array_aux[cont_particle][3] < prob_using):
+                    steps[9-actual_step] += 1
+                else:
+                    actual_step += 1
+                    prob_using += step_prob 
+
+            #solves the problem with the extra particles not asigned to the last position
+            steps[9] += steps[10]
+
+            bpy.data.objects['Sphere'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['Sphere']
+            for cont_mat in range(10):
+                #Avoid the Ico9_extra problem using "9-""
+                bpy.data.objects['Sphere'].particle_systems['Drops'].settings.active_dupliweight_index = 9-cont_mat
+                dupli_weights_name = bpy.data.objects['Sphere'].particle_systems['Drops'].settings.active_dupliweight.name
+                material_value = bpy.data.objects['Sphere'].particle_systems['Drops'].settings.dupli_weights.get(dupli_weights_name)
+                material_value.count = steps[cont_mat]
 
             for pa in psys1.particles:
                 #God´s particle solution
@@ -1176,12 +1379,12 @@ class ParticlesBackward(bpy.types.Operator):
                 pa.lifetime = 500
                 pa.velocity = (0,0,0)
                 #3D placement
-                x_pos = array_3d[actual_state][cont][0] 
-                y_pos = array_3d[actual_state][cont][1] 
-                z_pos = array_3d[actual_state][cont][2]
+                x_pos = array_aux[cont][0] 
+                y_pos = array_aux[cont][1] 
+                z_pos = array_aux[cont][2]
                 pa.location = (x_pos,y_pos,z_pos)
-                prob = array_3d[actual_state][cont][3] 
-                cont += 1 
+                prob = array_aux[cont][3] 
+                cont += 1
 
             bpy.ops.particle.stabilizer()
 
