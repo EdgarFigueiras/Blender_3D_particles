@@ -188,11 +188,6 @@ class OBJECT_OT_AddColors(bpy.types.Operator):
             if (mini < general_minimum):
                 general_minimum = mini
 
-        f = open("/Users/edgarfigueiras/Desktop/" + 'particles_data.txt', 'w+')
-        f.write("Max: " + str(array_aux[particles_number-1][3]) +  " - general_maximum: " + str(general_maximum) +"\r\n")
-        f.write("Min: " + str(array_aux[0][3]) +  " - general_minimum: " + str(general_minimum) +"\r\n")
-        f.close()
-
 
         #Obtain an scalated step to distribute the points between the 10 scales of probability
         step_prob = (general_maximum-general_minimum)/10
@@ -202,8 +197,8 @@ class OBJECT_OT_AddColors(bpy.types.Operator):
         actual_step = 0
 
         for cont_particle in range(particles_number):
-            if(array_aux[cont_particle][3] < prob_using):
-                steps[9-actual_step] += 1
+            if(array_aux[cont_particle][3] <= prob_using):
+                steps[actual_step] += 1
             else:
                 actual_step += 1
                 prob_using += step_prob 
@@ -214,7 +209,7 @@ class OBJECT_OT_AddColors(bpy.types.Operator):
         bpy.data.objects['Sphere'].select = True
         bpy.context.scene.objects.active = bpy.data.objects['Sphere']
         for cont_mat in range(10):
-            material_value = bpy.data.objects['Sphere'].particle_systems['Drops'].settings.dupli_weights.get("Ico_"+str(cont_mat)+": 1")
+            material_value = bpy.data.objects['Sphere'].particle_systems['Drops'].settings.dupli_weights.get("Ico_"+str(9-cont_mat)+": 1")
             material_value.count = steps[cont_mat]
 
         return{'FINISHED'} 
@@ -797,8 +792,8 @@ class ParticleCalculator(bpy.types.Operator):
         
 
         #Set the world color 
-        #bpy.context.scene.world.horizon_color = (0, 0, 0)
-        bpy.context.scene.world.horizon_color = (0.0041, 0.0087, 0.145)
+        bpy.context.scene.world.horizon_color = (0, 0, 0)
+        #bpy.context.scene.world.horizon_color = (0.0041, 0.0087, 0.145)
         bpy.context.scene.world.light_settings.use_environment_light = True
         #Set the light propertyes
         bpy.data.objects['Lamp'].data.type = 'SUN'
@@ -815,7 +810,7 @@ class ParticleCalculator(bpy.types.Operator):
                     
         psys1.name = 'Drops' 
 
-        #Create materials
+        #Create materialsx
         #Creating the 10 materials to make the degradation
         mat_bur = bpy.data.materials.new('Burdeaux')
         mat_bur.diffuse_color = (0.174563, 0.004221, 0.0208302)
@@ -826,7 +821,7 @@ class ParticleCalculator(bpy.types.Operator):
         mat_red.type='SURFACE'
 
         mat_ora = bpy.data.materials.new('Orange')
-        mat_ora.diffuse_color = (0.8, 0, 0.0568561)
+        mat_ora.diffuse_color = (0.801, 0.0885, 0.0372)
         mat_ora.type='SURFACE'
 
         mat_pap = bpy.data.materials.new('Papaya')
@@ -857,8 +852,8 @@ class ParticleCalculator(bpy.types.Operator):
         mat_dar.diffuse_color = (0.017, 0, 0.8)
         mat_dar.type='SURFACE'
 
+        #materials_vector = ([mat_dar, mat_blu, mat_sky, mat_tur, mat_gre, mat_lim, mat_pap, mat_ora, mat_red, mat_bur])
         materials_vector = ([mat_bur, mat_red, mat_ora, mat_pap, mat_lim, mat_gre, mat_tur, mat_sky, mat_blu, mat_dar])
-
         
         #Creating the Icospheres that will give the particles the color gradiations as an origin of the material
         ico_creation(materials_vector)
@@ -1162,22 +1157,22 @@ class ParticlesForward(bpy.types.Operator):
             prob_using = step_prob
 
             steps = np.zeros(11)
-            actual_step = 0
+            actual_step = 9
 
             for cont_particle in range(particles_number):
                 if(array_aux[cont_particle][3] < prob_using):
-                    steps[9-actual_step] += 1
+                    steps[actual_step] += 1
                 else:
-                    actual_step += 1
+                    actual_step -= 1
                     prob_using += step_prob 
 
             #solves the problem with the extra particles not asigned to the last position
-            steps[9] += steps[10]
+            #steps[9] += steps[10]
 
             bpy.data.objects['Sphere'].select = True
             bpy.context.scene.objects.active = bpy.data.objects['Sphere']
             for cont_mat in range(10):
-                #Avoid the Ico9_extra problem using "9-""
+                #Avoid the Ico9_extra problem using "9-"
                 bpy.data.objects['Sphere'].particle_systems['Drops'].settings.active_dupliweight_index = 9-cont_mat
                 dupli_weights_name = bpy.data.objects['Sphere'].particle_systems['Drops'].settings.active_dupliweight.name
                 material_value = bpy.data.objects['Sphere'].particle_systems['Drops'].settings.dupli_weights.get(dupli_weights_name)
@@ -1351,13 +1346,13 @@ class ParticlesBackward(bpy.types.Operator):
             prob_using = step_prob
 
             steps = np.zeros(11)
-            actual_step = 0
+            actual_step = 9
 
             for cont_particle in range(particles_number):
                 if(array_aux[cont_particle][3] < prob_using):
-                    steps[9-actual_step] += 1
+                    steps[actual_step] += 1
                 else:
-                    actual_step += 1
+                    actual_step -= 1
                     prob_using += step_prob 
 
             #solves the problem with the extra particles not asigned to the last position
@@ -1366,7 +1361,7 @@ class ParticlesBackward(bpy.types.Operator):
             bpy.data.objects['Sphere'].select = True
             bpy.context.scene.objects.active = bpy.data.objects['Sphere']
             for cont_mat in range(10):
-                #Avoid the Ico9_extra problem using "9-""
+                #Avoid the Ico9_extra problem using "9-"
                 bpy.data.objects['Sphere'].particle_systems['Drops'].settings.active_dupliweight_index = 9-cont_mat
                 dupli_weights_name = bpy.data.objects['Sphere'].particle_systems['Drops'].settings.active_dupliweight.name
                 material_value = bpy.data.objects['Sphere'].particle_systems['Drops'].settings.dupli_weights.get(dupli_weights_name)
