@@ -64,6 +64,12 @@ planes_number = (
     ('2P', '2P', '')
 )
 
+planes_project = (
+    ('X', 'X', ''),
+    ('Y', 'Y', ''),
+    ('Z', 'Z', '')
+)
+
 enum_items = (
     ('FOO', 'Foo', ''),
     ('BAR', 'Bar', '')
@@ -127,6 +133,12 @@ class MySettings(PropertyGroup):
         description="Modify the State",
         min = 0, max = 9999,
         default = 0)
+
+    int_box_offset = IntProperty(
+        name="Offset ", 
+        description="Modify the offset to show the projection",
+        min = -1000, max = 1000,
+        default = 50)
 
     bool_cut_box = BoolProperty(
         name="Cut box side",
@@ -498,6 +510,60 @@ class OBJECT_OT_PlaneDelete(bpy.types.Operator):
 
         return{'FINISHED'} 
 
+class OBJECT_OT_PlanePlacementProject(bpy.types.Operator):
+    bl_idname = "place.planeproject"
+    bl_label = "Plane project management"
+    country = bpy.props.StringProperty()
+
+    def execute(self, context):
+
+        bpy.ops.object.select_all(action='DESELECT')
+        try:
+            bpy.data.objects['Sphere_projections'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['Sphere_projections'] 
+            bpy.ops.object.delete()
+            bpy.data.objects['Sphere'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['Sphere'] 
+            bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'}, TRANSFORM_OT_translate={"value":(297.861, -706.12, -1793.05), "constraint_axis":(False, False, False), "constraint_orientation":'GLOBAL', "mirror":False, "proportional":'DISABLED', "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False})
+            bpy.context.object.name='Sphere_projections'
+            bpy.data.objects['Sphere_projections'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['Sphere_projections'] 
+
+        except:
+            bpy.data.objects['Sphere'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['Sphere'] 
+            bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'}, TRANSFORM_OT_translate={"value":(297.861, -706.12, -1793.05), "constraint_axis":(False, False, False), "constraint_orientation":'GLOBAL', "mirror":False, "proportional":'DISABLED', "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False})
+            bpy.context.object.name='Sphere_projections'
+            bpy.data.objects['Sphere_projections'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['Sphere_projections'] 
+
+        bpy.ops.mesh.primitive_plane_add(radius=5, view_align=False, enter_editmode=False, location=(0, 0, 6), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+        proj_plane_name1 = "Project_plane"
+        bpy.context.object.name = "Project_plane"
+        if(bpy.context.scene.PlanesProject == "X"):
+            bpy.data.objects[proj_plane_name1].rotation_euler=(0,1.5708,0)
+        if(bpy.context.scene.PlanesProject == "Y"):
+            bpy.data.objects[proj_plane_name1].rotation_euler=(1.5708,0,0)
+        if(bpy.context.scene.PlanesProject == "Z"):
+            bpy.data.objects[proj_plane_name1].rotation_euler=(0,0,0)
+        
+
+        return{'FINISHED'} 
+
+class OBJECT_OT_PlaneDeleteProject(bpy.types.Operator):
+    bl_idname = "delete.planeproject"
+    bl_label = "Plane project delete"
+    country = bpy.props.StringProperty()
+
+    def execute(self, context):
+
+        bpy.context.object.select = 0
+
+        bpy.data.objects["Project_plane"].select = True
+        bpy.ops.object.delete() 
+
+        return{'FINISHED'} 
+
 
 
 class OBJECT_PT_my_panel(Panel):
@@ -615,6 +681,7 @@ class PanelStates(bpy.types.Panel):
 
         row.operator("particle.forward", text="Next State", icon='FORWARD')
 
+
 class PanelCut(bpy.types.Panel):
     """Panel para añadir al entorno 3D"""
     bl_label = "Cut Panel"
@@ -628,9 +695,7 @@ class PanelCut(bpy.types.Panel):
         box22 = layout.box()
 
 
-        #Box to move back and forward between states
-
-        box22.label(text="STATES")
+        box22.label(text="CUTS")
 
         box22.label(text="Number of planes (1 by default)", icon='MOD_SOLIDIFY')
 
@@ -652,7 +717,43 @@ class PanelCut(bpy.types.Panel):
 
         box22.operator("delete.plane", text="Delete Planes")
 
-        
+
+
+class PanelProject(bpy.types.Panel):
+    """Panel para añadir al entorno 3D"""
+    bl_label = "Projection Panel"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'TOOLS'
+    COMPAT_ENGINES = {'BLENDER_RENDER'}
+
+    def draw(self, context):
+        layout = self.layout
+        scn = context.scene
+        box22 = layout.box()
+
+        box22.label(text="PROJECTIONS")
+
+        box22.label(text="Axis of the projection", icon='MANIPUL')
+
+        box22.prop_search(context.scene, "PlanesProject", context.scene, "planesproject", text="" , icon='OBJECT_DATA')
+
+        box22.label(text="Places the projection plane in the 3D view", icon='MOD_UVPROJECT')
+
+        box22.operator("place.planeproject", text="Place plane")
+
+        box22.operator("bool_cut_box", text="Place plane")
+
+        box22.label(text="Sets the offset of the projection respect the center", icon='MOD_UVPROJECT')
+
+        box22.prop(scn.my_tool, "int_box_offset")
+
+        box22.label(text="Makes the projection using the plane", icon='MOD_MIRROR')
+
+        box22.operator("particle.projection", text="Projection")
+
+        box22.label(text="Delete the projection plane", icon='FACESEL_HLT')
+
+        box22.operator("delete.planeproject", text="Delete Plane")     
 
 
 
@@ -735,6 +836,7 @@ def rellenar_selectores(scene):
     scene.videoformats.clear()
     scene.calculationformats.clear()
     scene.planesnumber.clear()
+    scene.planesproject.clear()
 
     for identifier, name, description in image_format:
         scene.imageformats.add().name = name
@@ -747,6 +849,9 @@ def rellenar_selectores(scene):
 
     for identifier, name, description in planes_number:
         scene.planesnumber.add().name = name
+
+    for identifier, name, description in planes_project:
+        scene.planesproject.add().name = name
 
 
 def register():
@@ -768,6 +873,10 @@ def register():
             type=bpy.types.PropertyGroup
         )
 
+    bpy.types.Scene.planesproject = bpy.props.CollectionProperty(
+            type=bpy.types.PropertyGroup
+        )
+
     bpy.types.Scene.ImageFormat = bpy.props.StringProperty()
 
     bpy.types.Scene.VideoFormat = bpy.props.StringProperty()
@@ -775,6 +884,8 @@ def register():
     bpy.types.Scene.CalculationFormat = bpy.props.StringProperty()
 
     bpy.types.Scene.PlanesNumber = bpy.props.StringProperty()
+
+    bpy.types.Scene.PlanesProject = bpy.props.StringProperty()
 
     bpy.app.handlers.scene_update_pre.append(rellenar_selectores)
 
@@ -1656,7 +1767,7 @@ bl_info = {
 
 #*************************************************************************# 
 # ----------------------------------------------------------------------- #
-#    Particles Stabilizer                                                 #
+#    Particles Cut                                                        #
 # ----------------------------------------------------------------------- #
 #*************************************************************************# 
 
@@ -1723,6 +1834,7 @@ class ParticlesCut(bpy.types.Operator):
             array_aux[point_number] = array_3d[actual_state][point_number]
 
         #Plane info
+        #For just 1 plane
         if(bpy.context.scene.PlanesNumber == "1P"):
             cut_plane_1= "Cut_plane"
             plane_pos_1 = bpy.data.objects[cut_plane_1].location
@@ -1745,6 +1857,7 @@ class ParticlesCut(bpy.types.Operator):
                 prob = array_aux[cont][3] 
                 cont += 1
 
+        #For 2 planes
         if(bpy.context.scene.PlanesNumber == "2P"):
             cut_plane_1= "Cut_plane"
             plane_pos_1 = bpy.data.objects[cut_plane_1].location
@@ -1770,10 +1883,6 @@ class ParticlesCut(bpy.types.Operator):
                 prob = array_aux[cont][3] 
                 cont += 1 
 
-
-
-
-
         file_with_binary_data.close()
 
 
@@ -1790,6 +1899,166 @@ def register():
 
 def unregister():
     bpy.utils.unregister_class(ParticlesCut)
+    
+# This allows you to run the script directly from blenders text editor
+# to test the addon without having to install it.
+if __name__ == "__main__":
+    register()  
+
+
+#*************************************************************************# 
+# ----------------------------------------------------------------------- #
+#    Particles Projection                                                 #
+# ----------------------------------------------------------------------- #
+#*************************************************************************# 
+
+class ParticlesProjection(bpy.types.Operator):
+    """My Object Moving Script"""               # blender will use this as a tooltip for menu items and buttons.
+    bl_idname = "particle.projection"           # unique identifier for buttons and menu items to reference.
+    bl_label = "Particles projection"        # display name in the interface.
+    bl_options = {'REGISTER', 'UNDO'}           # enable undo for the operator.
+   
+    def execute(self,context):        # execute() is called by blender when running the operator.
+
+        #Define an error message if occurs a problem during the run, is showed using a popup
+        def error_message(self, context):
+            self.layout.label("Imposible to stabilize particles. Try to Run simulation again")
+
+        #return the name of the emitter wich is asigned to this number by order
+        def emitter_system(x):
+            if x == 0 : 
+                emitter = bpy.data.objects['Sphere']
+            if (x > 0 and x < 10) :
+                emitter = bpy.data.objects['Sphere.00' + str(x)]
+            if (x >= 10 and x < 100) :
+                emitter = bpy.data.objects['Sphere.00' + str(x)]
+            return emitter.particle_systems[-1] 
+
+        path = bpy.data.scenes['Scene'].my_tool.path #Origin from where the data will be readen, selected by the first option in the Panel
+        try:
+            file_with_binary_data = open(path, 'rb+') #File with binary data
+
+            array_with_all_data = np.load(file_with_binary_data) #Gets the binary data as an array with 6 vectors (x_data, x_probability, y_data, y_probability, z_data, z_probability)
+       
+            #Matrix with the data of the 2D grid
+            array_3d = array_with_all_data['arr_0'] 
+
+        except:
+            bpy.context.window_manager.popup_menu(error_message, title="An error ocurred", icon='CANCEL')
+
+        N = len(array_3d[0])   #Size of the matrix
+
+        particles_number = bpy.data.scenes['Scene'].my_tool.int_box_n_particulas #Read from the panel 
+        
+        actual_state = bpy.data.scenes["Scene"].my_tool.int_box_state 
+
+        if (actual_state == -1):
+            actual_state=0
+
+        #Deselects all
+        bpy.ops.object.select_all(action='DESELECT')
+
+        bpy.data.objects['Sphere'].select = True
+        bpy.context.scene.objects.active = bpy.data.objects['Sphere'] 
+
+        emitter = bpy.data.objects['Sphere_projections']  
+        psys1 = emitter.particle_systems[-1] 
+
+        particles_number = bpy.data.scenes['Scene'].my_tool.int_box_n_particulas
+
+        #Use an auxiliar array to work with a variable number of points, 
+        #allowing the user to make diferent points simulation with good results
+        array_aux = np.zeros((particles_number, 4))
+        #Fill the auxiliar array with the data of the original one
+        for point_number in range (0, particles_number):
+            array_aux[point_number] = array_3d[actual_state][point_number]
+
+
+        proj_plane_1= "Project_plane"
+        plane_pos_1 = bpy.data.objects[proj_plane_1].location
+        plane_size_1 = bpy.data.objects[proj_plane_1].dimensions
+
+        array_aux = array_aux[np.argsort(array_aux[:,3])]
+
+
+        offset = bpy.context.scene.my_tool.int_box_offset
+
+
+        x_pos = 0
+        y_pos = 0
+        z_pos = 0
+        prob = 0
+        cont = 0
+
+        if (bpy.context.scene.PlanesProject == "X"):
+            for pa in psys1.particles:
+                #God´s particle solution
+                #if pa.die_time < 500 :
+                pa.die_time = 500
+                pa.lifetime = 500
+                pa.velocity = (0,0,0)
+                #3D placement
+                x_pos = array_aux[cont][0] 
+                y_pos = array_aux[cont][1] 
+                z_pos = array_aux[cont][2]
+                prob = array_aux[cont][3]
+                if((x_pos > plane_pos_1[0] - 0.5) and (x_pos < plane_pos_1[0] + 0.5)):
+                    pa.location = (x_pos + offset , y_pos, z_pos)
+                else:
+                    pa.location = (0,0,0)
+                cont += 1 
+
+
+        if (bpy.context.scene.PlanesProject == "Y"):
+            for pa in psys1.particles:
+                #God´s particle solution
+                #if pa.die_time < 500 :
+                pa.die_time = 500
+                pa.lifetime = 500
+                pa.velocity = (0,0,0)
+                #3D placement
+                x_pos = array_aux[cont][0] 
+                y_pos = array_aux[cont][1] 
+                z_pos = array_aux[cont][2]
+                prob = array_aux[cont][3]
+                if((y_pos > plane_pos_1[1] - 0.5) and (y_pos < plane_pos_1[1] + 0.5)):
+                    pa.location = (x_pos, y_pos + offset, z_pos)
+                else:
+                    pa.location = (-10000,-10000,-10000)
+                cont += 1 
+
+        if (bpy.context.scene.PlanesProject == "Z"):
+            for pa in psys1.particles:
+                #God´s particle solution
+                #if pa.die_time < 500 :
+                pa.die_time = 500
+                pa.lifetime = 500
+                pa.velocity = (0,0,0)
+                #3D placement
+                x_pos = array_aux[cont][0] 
+                y_pos = array_aux[cont][1] 
+                z_pos = array_aux[cont][2]
+                prob = array_aux[cont][3]
+                if((z_pos > plane_pos_1[2] - 0.5) and (z_pos < plane_pos_1[2] + 0.5)):
+                    pa.location = (x_pos, y_pos, z_pos + offset)
+                else:
+                    pa.location = (-10000,-10000,-10000)
+                cont += 1 
+
+
+        bpy.context.scene.frame_current = bpy.context.scene.frame_current + 1
+        return {'FINISHED'}            # this lets blender know the operator finished successfully.
+
+# ------------------------------------------------------------------------
+#    Register and unregister functions
+# ------------------------------------------------------------------------
+
+def register():
+    bpy.utils.register_class(ParticlesProjection)
+
+
+def unregister():
+    bpy.utils.unregister_class(ParticlesProjection)
     
 # This allows you to run the script directly from blenders text editor
 # to test the addon without having to install it.
