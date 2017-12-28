@@ -67,6 +67,7 @@ planes_number = (
 planes_project = (
     ('X', 'X', ''),
     ('Y', 'Y', ''),
+    ('XZ', 'XZ', ''),
     ('Z', 'Z', '')
 )
 
@@ -528,16 +529,34 @@ class OBJECT_OT_PlanePlacementProject(bpy.types.Operator):
             bpy.context.object.name='Sphere_projections'
             bpy.data.objects['Sphere_projections'].select = True
             bpy.context.scene.objects.active = bpy.data.objects['Sphere_projections'] 
-
+            if(bpy.context.scene.PlanesProject == "XZ"):
+                bpy.data.objects['Sphere_projections_2'].select = True
+                bpy.context.scene.objects.active = bpy.data.objects['Sphere_projections_2'] 
+                bpy.ops.object.delete()
+                bpy.data.objects['Sphere_projections'].select = True
+                bpy.context.scene.objects.active = bpy.data.objects['Sphere_projections'] 
+                bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'}, TRANSFORM_OT_translate={"value":(297.861, -706.12, -1793.05), "constraint_axis":(False, False, False), "constraint_orientation":'GLOBAL', "mirror":False, "proportional":'DISABLED', "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False})
+                bpy.context.object.name='Sphere_projections_2'
+                bpy.data.objects['Sphere_projections_2'].select = True
+                bpy.context.scene.objects.active = bpy.data.objects['Sphere_projections_2']
         except:
             bpy.data.objects['Sphere'].select = True
             bpy.context.scene.objects.active = bpy.data.objects['Sphere'] 
             bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'}, TRANSFORM_OT_translate={"value":(297.861, -706.12, -1793.05), "constraint_axis":(False, False, False), "constraint_orientation":'GLOBAL', "mirror":False, "proportional":'DISABLED', "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False})
             bpy.context.object.name='Sphere_projections'
             bpy.data.objects['Sphere_projections'].select = True
-            bpy.context.scene.objects.active = bpy.data.objects['Sphere_projections'] 
+            bpy.context.scene.objects.active = bpy.data.objects['Sphere_projections']
+            if(bpy.context.scene.PlanesProject == "XZ"): 
+                bpy.data.objects['Sphere_projections'].select = True
+                bpy.context.scene.objects.active = bpy.data.objects['Sphere_projections'] 
+                bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'}, TRANSFORM_OT_translate={"value":(297.861, -706.12, -1793.05), "constraint_axis":(False, False, False), "constraint_orientation":'GLOBAL', "mirror":False, "proportional":'DISABLED', "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False})
+                bpy.context.object.name='Sphere_projections_2'
+                bpy.data.objects['Sphere_projections_2'].select = True
+                bpy.context.scene.objects.active = bpy.data.objects['Sphere_projections_2']
 
-        bpy.ops.mesh.primitive_plane_add(radius=5, view_align=False, enter_editmode=False, location=(0, 0, 6), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+
+
+        bpy.ops.mesh.primitive_plane_add(radius=15, view_align=False, enter_editmode=False, location=(0, 0, 6), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
         proj_plane_name1 = "Project_plane"
         bpy.context.object.name = "Project_plane"
         if(bpy.context.scene.PlanesProject == "X"):
@@ -546,6 +565,12 @@ class OBJECT_OT_PlanePlacementProject(bpy.types.Operator):
             bpy.data.objects[proj_plane_name1].rotation_euler=(1.5708,0,0)
         if(bpy.context.scene.PlanesProject == "Z"):
             bpy.data.objects[proj_plane_name1].rotation_euler=(0,0,0)
+        if(bpy.context.scene.PlanesProject == "XZ"):
+            bpy.ops.mesh.primitive_plane_add(radius=15, view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+            proj_plane_name2 = "Project_plane_2"
+            bpy.context.object.name = "Project_plane_2"
+            bpy.data.objects[proj_plane_name1].rotation_euler=(0,1.5708,0)
+            bpy.data.objects[proj_plane_name2].rotation_euler=(0,0,0)
         
 
         return{'FINISHED'} 
@@ -561,9 +586,31 @@ class OBJECT_OT_PlaneDeleteProject(bpy.types.Operator):
 
         bpy.data.objects["Project_plane"].select = True
         bpy.ops.object.delete() 
+        try:
+            bpy.data.objects["Project_plane_2"].select = True
+            bpy.ops.object.delete() 
+        except:
+            return{'FINISHED'}
 
         return{'FINISHED'} 
 
+
+class OBJECT_OT_Template_1(bpy.types.Operator):
+    bl_idname = "template.1"
+    bl_label = "Template 1"
+    country = bpy.props.StringProperty()
+
+    def execute(self, context):
+
+        mat_grid = bpy.data.materials.new('Grid_Material')
+        mat_grid.diffuse_color = (0.34, 0.34, 0.34)
+        mat_grid.type='WIRE'
+
+        bpy.ops.mesh.primitive_grid_add(x_subdivisions=8, y_subdivisions=8, radius=10, view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+        bpy.context.object.data.materials.append(mat_grid)
+
+
+        return{'FINISHED'} 
 
 
 class OBJECT_PT_my_panel(Panel):
@@ -680,6 +727,26 @@ class PanelStates(bpy.types.Panel):
         row.operator("particle.backward", text="Previous State", icon='BACK')
 
         row.operator("particle.forward", text="Next State", icon='FORWARD')
+
+class PanelTemplate(bpy.types.Panel):
+    """Panel para añadir al entorno 3D"""
+    bl_label = "Templates Panel"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'TOOLS'
+    COMPAT_ENGINES = {'BLENDER_RENDER'}
+
+    def draw(self, context):
+        layout = self.layout
+        scn = context.scene
+        col = layout.column(align=True)
+        box = layout.box()
+
+
+        #Box to move back and forward between states
+
+        box.label(text="TEMPLATES")
+
+        box.operator("template.1", text="Template 1", icon='GRID')
 
 
 class PanelCut(bpy.types.Panel):
@@ -1886,7 +1953,7 @@ class ParticlesCut(bpy.types.Operator):
         file_with_binary_data.close()
 
 
-        #bpy.context.scene.frame_current = bpy.context.scene.frame_current + 1
+        bpy.context.scene.frame_current = bpy.context.scene.frame_current + 1
         return {'FINISHED'}            # this lets blender know the operator finished successfully.
 
 # ------------------------------------------------------------------------
@@ -2041,6 +2108,51 @@ class ParticlesProjection(bpy.types.Operator):
                 prob = array_aux[cont][3]
                 if((z_pos > plane_pos_1[2] - 0.5) and (z_pos < plane_pos_1[2] + 0.5)):
                     pa.location = (x_pos, y_pos, z_pos + offset)
+                else:
+                    pa.location = (-10000,-10000,-10000)
+                cont += 1 
+
+        if (bpy.context.scene.PlanesProject == "XZ"):
+
+            #X
+            for pa in psys1.particles:
+                #God´s particle solution
+                #if pa.die_time < 500 :
+                pa.die_time = 500
+                pa.lifetime = 500
+                pa.velocity = (0,0,0)
+                #3D placement
+                x_pos = array_aux[cont][0] 
+                y_pos = array_aux[cont][1] 
+                z_pos = array_aux[cont][2]
+                prob = array_aux[cont][3]
+                if((x_pos > plane_pos_1[0] - 0.5) and (x_pos < plane_pos_1[0] + 0.5)):
+                    pa.location = (x_pos + offset, y_pos, z_pos)
+                else:
+                    pa.location = (-10000,-10000,-10000)
+                cont += 1 
+
+            #Z
+            proj_plane_2= "Project_plane_2"
+            plane_pos_2 = bpy.data.objects[proj_plane_2].location
+            plane_size_2 = bpy.data.objects[proj_plane_2].dimensions
+            emitter = bpy.data.objects['Sphere_projections_2']  
+            psys1 = emitter.particle_systems[-1] 
+            cont = 0
+
+            for pa in psys1.particles:
+                #God´s particle solution
+                #if pa.die_time < 500 :
+                pa.die_time = 500
+                pa.lifetime = 500
+                pa.velocity = (0,0,0)
+                #3D placement
+                x_pos = array_aux[cont][0] 
+                y_pos = array_aux[cont][1] 
+                z_pos = array_aux[cont][2]
+                prob = array_aux[cont][3]
+                if((z_pos > plane_pos_2[2] - 0.5) and (z_pos < plane_pos_2[2] + 0.5)):
+                    pa.location = (x_pos, y_pos, z_pos - offset)
                 else:
                     pa.location = (-10000,-10000,-10000)
                 cont += 1 
