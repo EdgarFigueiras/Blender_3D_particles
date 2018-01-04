@@ -556,7 +556,7 @@ class OBJECT_OT_PlanePlacementProject(bpy.types.Operator):
 
 
 
-        bpy.ops.mesh.primitive_plane_add(radius=15, view_align=False, enter_editmode=False, location=(0, 0, 6), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+        bpy.ops.mesh.primitive_plane_add(radius=15, view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
         proj_plane_name1 = "Project_plane"
         bpy.context.object.name = "Project_plane"
         if(bpy.context.scene.PlanesProject == "X"):
@@ -602,12 +602,76 @@ class OBJECT_OT_Template_1(bpy.types.Operator):
 
     def execute(self, context):
 
+        #Adds a grid with transpaces to the center
         mat_grid = bpy.data.materials.new('Grid_Material')
         mat_grid.diffuse_color = (0.34, 0.34, 0.34)
         mat_grid.type='WIRE'
 
         bpy.ops.mesh.primitive_grid_add(x_subdivisions=8, y_subdivisions=8, radius=10, view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
         bpy.context.object.data.materials.append(mat_grid)
+
+
+        return{'FINISHED'} 
+
+class OBJECT_OT_Template_2(bpy.types.Operator):
+    bl_idname = "template.2"
+    bl_label = "Template 2"
+    country = bpy.props.StringProperty()
+
+    def execute(self, context):
+
+        #Cut using 2 planes with default values
+        bpy.context.scene.PlanesNumber = "2P"
+        bpy.ops.place.plane()
+        bpy.ops.particle.cut()
+        bpy.ops.delete.plane()
+
+        #Projections in X and Z axis using default values
+        bpy.context.scene.PlanesProject = "XZ"
+        bpy.ops.place.planeproject()
+        bpy.ops.particle.projection()
+        bpy.ops.delete.planeproject()
+
+
+        return{'FINISHED'} 
+
+class OBJECT_OT_Template_3(bpy.types.Operator):
+    bl_idname = "template.3"
+    bl_label = "Template 3"
+    country = bpy.props.StringProperty()
+
+    def execute(self, context):
+        bpy.ops.object.select_all(action='DESELECT')
+        
+        #If dont exists a BezierCircle_Path 
+        try:
+            bpy.data.objects['BezierCircle_Path'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['BezierCircle_Path'] 
+            bpy.ops.object.delete()
+            bpy.ops.curve.primitive_bezier_circle_add(radius=100, view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+            bpy.context.object.name = 'BezierCircle_Path'
+            bpy.data.objects['Camera'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['Camera']
+
+        #If already exist the BezierCircle_Path
+        except:
+            bpy.ops.curve.primitive_bezier_circle_add(radius=100, view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+            bpy.context.object.name = 'BezierCircle_Path'
+            bpy.data.objects['Camera'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['Camera']
+            bpy.ops.object.constraint_add(type='FOLLOW_PATH')
+
+        #Configure the camera settings to make the orbital path
+        bpy.context.object.constraints["Follow Path"].target = bpy.data.objects["BezierCircle_Path"]
+        bpy.context.object.constraints["Follow Path"].forward_axis = 'FORWARD_X'
+        bpy.context.object.constraints["Follow Path"].use_curve_follow = True
+        bpy.context.object.constraints["Follow Path"].up_axis = 'UP_Y'
+        bpy.context.object.constraints["Follow Path"].offset = 1
+
+        #Sets camera properties to look to the center
+        bpy.data.objects['Camera'].data.clip_end=1000
+        bpy.context.object.rotation_euler=(0,-3.14159,0)
+        bpy.context.object.location=(0,0,0)
 
 
         return{'FINISHED'} 
@@ -746,7 +810,11 @@ class PanelTemplate(bpy.types.Panel):
 
         box.label(text="TEMPLATES")
 
-        box.operator("template.1", text="Template 1", icon='GRID')
+        box.operator("template.1", text="Add a grid", icon='GRID')
+
+        box.operator("template.2", text="Cut and Projections", icon='MOD_ARRAY')
+
+        box.operator("template.3", text="Orbital camera", icon='OUTLINER_DATA_CAMERA')
 
 
 class PanelCut(bpy.types.Panel):
