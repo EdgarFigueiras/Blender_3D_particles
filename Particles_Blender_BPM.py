@@ -671,8 +671,106 @@ class OBJECT_OT_Template_3(bpy.types.Operator):
         #Sets camera properties to look to the center
         bpy.data.objects['Camera'].data.clip_end=1000
         bpy.context.object.rotation_euler=(0,-3.14159,0)
-        bpy.context.object.location=(0,0,0)
 
+        return{'FINISHED'} 
+
+class OBJECT_OT_Template_4(bpy.types.Operator):
+    bl_idname = "template.4"
+    bl_label = "Template 4"
+    country = bpy.props.StringProperty()
+
+    def execute(self, context):
+
+        bpy.ops.object.select_all(action='DESELECT')
+
+        try:
+            bpy.data.objects['Axis_XYZ'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['Axis_XYZ'] 
+            bpy.ops.object.delete()
+
+        except:
+            bpy.ops.object.select_all(action='DESELECT')
+
+        size_axis = 40
+        cone_size = 0.7
+        cone_length = 1
+
+        #Axis X
+        bpy.ops.mesh.primitive_cone_add(radius1=1, radius2=0, depth=2, view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+        bpy.context.object.name = 'Cone_X'
+        bpy.context.object.scale=(cone_size,cone_size,cone_length)
+        bpy.context.object.rotation_euler=(0,1.5708,0)
+        bpy.context.object.location=(size_axis+cone_length,0,0)
+
+        bpy.ops.mesh.primitive_cylinder_add(view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+        bpy.context.object.name = 'Axis_X'
+        bpy.context.object.rotation_euler=(0,1.5708,0)
+        bpy.context.object.scale=(0.1,0.1,size_axis)
+
+        bpy.data.objects['Cone_X'].select = True
+        bpy.data.objects['Axis_X'].select = True
+        bpy.ops.object.join()
+
+        bpy.context.object.location=(size_axis,0,0)
+
+        #Axis Y
+        bpy.ops.object.select_all(action='DESELECT')
+
+        bpy.ops.mesh.primitive_cone_add(radius1=1, radius2=0, depth=2, view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+        bpy.context.object.name = 'Cone_Y'
+        bpy.context.object.scale=(cone_size,cone_size,cone_length)
+        bpy.context.object.rotation_euler=(-1.5708,0,0)
+        bpy.context.object.location=(0,size_axis+cone_length,0)
+
+        bpy.ops.mesh.primitive_cylinder_add(view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+        bpy.context.object.name = 'Axis_Y'
+        bpy.context.object.rotation_euler=(1.5708,0,0)
+        bpy.context.object.scale=(0.1,0.1,size_axis)
+
+        bpy.data.objects['Cone_Y'].select = True
+        bpy.data.objects['Axis_Y'].select = True
+        bpy.ops.object.join()
+
+        bpy.context.object.location=(0,size_axis,0)
+
+        #Axis Z
+        bpy.ops.object.select_all(action='DESELECT')
+
+        bpy.ops.mesh.primitive_cone_add(radius1=1, radius2=0, depth=2, view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+        bpy.context.object.name = 'Cone_Z'
+        bpy.context.object.scale=(cone_size,cone_size,cone_length)
+        bpy.context.object.rotation_euler=(0,0,1.5708)
+        bpy.context.object.location=(0,0,size_axis+cone_length)
+
+        bpy.ops.mesh.primitive_cylinder_add(view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+        bpy.context.object.name = 'Axis_XYZ'
+        bpy.context.object.rotation_euler=(0,0,0)
+        bpy.context.object.scale=(0.1,0.1,size_axis)
+
+        bpy.data.objects['Cone_Z'].select = True
+        bpy.data.objects['Axis_XYZ'].select = True
+        bpy.ops.object.join()
+
+        bpy.context.object.location=(0,0,size_axis)
+
+
+        #Axis XYZ
+        bpy.ops.object.select_all(action='DESELECT')
+
+        bpy.data.objects['Axis_X'].select = True
+        bpy.data.objects['Axis_Y'].select = True
+        bpy.data.objects['Axis_XYZ'].select = True
+        bpy.ops.object.join()
+
+        #Axis space placement
+        bpy.context.object.location=(-30,-30,0)
+
+        #Adds a grid with transpaces to the center
+        mat_grid = bpy.data.materials.new('Axis_Material')
+        mat_grid.diffuse_color = (0.34, 0.34, 0.34)
+        mat_grid.type='SURFACE'
+
+        bpy.context.object.data.materials.append(mat_grid)
 
         return{'FINISHED'} 
 
@@ -815,6 +913,8 @@ class PanelTemplate(bpy.types.Panel):
         box.operator("template.2", text="Cut and Projections", icon='MOD_ARRAY')
 
         box.operator("template.3", text="Orbital camera", icon='OUTLINER_DATA_CAMERA')
+
+        box.operator("template.4", text="3D Axis", icon='OUTLINER_DATA_EMPTY')
 
 
 class PanelCut(bpy.types.Panel):
@@ -2115,8 +2215,24 @@ class ParticlesProjection(bpy.types.Operator):
 
         array_aux = array_aux[np.argsort(array_aux[:,3])]
 
+        bpy.ops.object.select_all(action='DESELECT')
 
-        offset = bpy.context.scene.my_tool.int_box_offset
+        #Distance from the original object
+        offset_xy = 0
+        offset_z = 0
+
+        try:
+            bpy.data.objects['Axis_XYZ'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['Axis_XYZ'] 
+            #X and Y should be at the same spacial point, so the ofsett of any asis will be the same
+            offset_xy = bpy.context.object.location[0]
+            offset_z = -1 * (bpy.context.object.scale[2] + ( -1 * bpy.context.object.location[2]))
+
+        except:
+            offset_xy = -1 * bpy.context.scene.my_tool.int_box_offset
+            offset_z = -1 * bpy.context.scene.my_tool.int_box_offset
+
+
 
 
         x_pos = 0
@@ -2138,7 +2254,7 @@ class ParticlesProjection(bpy.types.Operator):
                 z_pos = array_aux[cont][2]
                 prob = array_aux[cont][3]
                 if((x_pos > plane_pos_1[0] - 0.5) and (x_pos < plane_pos_1[0] + 0.5)):
-                    pa.location = (x_pos + offset , y_pos, z_pos)
+                    pa.location = (offset_xy , y_pos, z_pos)
                 else:
                     pa.location = (0,0,0)
                 cont += 1 
@@ -2157,7 +2273,7 @@ class ParticlesProjection(bpy.types.Operator):
                 z_pos = array_aux[cont][2]
                 prob = array_aux[cont][3]
                 if((y_pos > plane_pos_1[1] - 0.5) and (y_pos < plane_pos_1[1] + 0.5)):
-                    pa.location = (x_pos, y_pos + offset, z_pos)
+                    pa.location = (x_pos, offset_xy, z_pos)
                 else:
                     pa.location = (-10000,-10000,-10000)
                 cont += 1 
@@ -2175,7 +2291,7 @@ class ParticlesProjection(bpy.types.Operator):
                 z_pos = array_aux[cont][2]
                 prob = array_aux[cont][3]
                 if((z_pos > plane_pos_1[2] - 0.5) and (z_pos < plane_pos_1[2] + 0.5)):
-                    pa.location = (x_pos, y_pos, z_pos + offset)
+                    pa.location = (x_pos, y_pos, offset_z)
                 else:
                     pa.location = (-10000,-10000,-10000)
                 cont += 1 
@@ -2195,7 +2311,7 @@ class ParticlesProjection(bpy.types.Operator):
                 z_pos = array_aux[cont][2]
                 prob = array_aux[cont][3]
                 if((x_pos > plane_pos_1[0] - 0.5) and (x_pos < plane_pos_1[0] + 0.5)):
-                    pa.location = (x_pos + offset, y_pos, z_pos)
+                    pa.location = (offset_xy, y_pos, z_pos)
                 else:
                     pa.location = (-10000,-10000,-10000)
                 cont += 1 
@@ -2220,7 +2336,7 @@ class ParticlesProjection(bpy.types.Operator):
                 z_pos = array_aux[cont][2]
                 prob = array_aux[cont][3]
                 if((z_pos > plane_pos_2[2] - 0.5) and (z_pos < plane_pos_2[2] + 0.5)):
-                    pa.location = (x_pos, y_pos, z_pos - offset)
+                    pa.location = (x_pos, y_pos, offset_z)
                 else:
                     pa.location = (-10000,-10000,-10000)
                 cont += 1 
