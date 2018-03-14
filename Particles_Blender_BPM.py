@@ -76,18 +76,30 @@ enum_items = (
     ('BAR', 'Bar', '')
 )
 
+initial_objects = (
+    ('GaussBeam', 'GaussBeam', ''),
+    ('Vortex', 'Vortex', '')
+)
+
 class MySettings(PropertyGroup):
 
     folder_path = StringProperty(
         name="Data Folder",
-        description="Select the folder with the simulation data.",
+        description="Folder with the simulation data.",
+        default="",
+        maxlen=1024,
+        subtype='FILE_PATH')
+
+    folder_path_export = StringProperty(
+        name="Data Folder export initial conditions",
+        description="Folder where initial conditions will be exported.",
         default="",
         maxlen=1024,
         subtype='FILE_PATH')
 
     path = StringProperty(
         name="Data File",
-        description="Select the file with the simulation data.",
+        description="File with the simulation data.",
         default="",
         maxlen=1024,
         subtype='FILE_PATH')
@@ -144,7 +156,61 @@ class MySettings(PropertyGroup):
     bool_cut_box = BoolProperty(
         name="Cut box side",
         description="Enables the oposite cut plane view",
-        default = True)      
+        default = True)  
+
+    int_x_size = IntProperty(
+        name="X Max Size", 
+        description="X-window size",
+        min = 0, max = 1000,
+        default = 100)  
+
+    int_y_size = IntProperty(
+        name="Y Max Size", 
+        description="Y-window size",
+        min = 0, max = 1000,
+        default = 100)   
+
+    int_absorb_coeff = IntProperty(
+        name="Absorb Coefficient", 
+        description="Absorb Coefficient",
+        min = 0, max = 100,
+        default = 10) 
+
+    x_ob_pos = IntProperty(
+        name="X initial object position", 
+        description="X initial object position",
+        min = -1000, max = 1000,
+        default = 0) 
+    
+    y_ob_pos = IntProperty(
+        name="Y initial object position", 
+        description="Y initial object position",
+        min = -1000, max = 1000,
+        default = 0) 
+    
+    z_ob_pos = IntProperty(
+        name="Z initial object position", 
+        description="Z initial object position",
+        min = -1000, max = 1000,
+        default = 0)
+
+    zR_ob = IntProperty(
+        name="Rayleigh range", 
+        description="Rayleigh range object property value",
+        min = -1000, max = 1000,
+        default = 0) 
+
+    zini_ob = IntProperty(
+        name="zini value", 
+        description="zini object property value",
+        min = -100, max = 100,
+        default = -5) 
+
+    quini_ob = IntProperty(
+        name="quini value", 
+        description="quini object property value",
+        min = 0, max = 100,
+        default = 10) 
 
 #*************************************************************************# 
 # ----------------------------------------------------------------------- #
@@ -774,6 +840,295 @@ class OBJECT_OT_Template_4(bpy.types.Operator):
 
         return{'FINISHED'} 
 
+class OBJECT_OT_Initial_Object(bpy.types.Operator):
+    bl_idname = "initial.object"
+    bl_label = "Initial Object"
+    country = bpy.props.StringProperty()
+
+    def execute(self, context):
+
+        bpy.data.objects['Lamp'].data.type = 'POINT'
+        bpy.data.objects['Lamp'].location = (0,0,10)
+        bpy.data.objects['Lamp'].rotation_euler = (0,0,10)
+
+        bpy.context.scene.world.horizon_color = (1, 1, 1)
+        bpy.context.scene.world.light_settings.use_ambient_occlusion = True
+
+
+        bpy.ops.object.select_all(action='DESELECT')
+
+        try:
+            bpy.data.objects['Origin_Cube'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['Origin_Cube'] 
+            bpy.ops.object.delete()
+            bpy.data.objects['X_size_text'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['X_size_text'] 
+            bpy.ops.object.delete()
+            bpy.data.objects['Y_size_text'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['Y_size_text'] 
+            bpy.ops.object.delete()
+            bpy.data.objects['Abs_coeff_text'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['Abs_coeff_text'] 
+            bpy.ops.object.delete()
+            #Remove materials function, first parameter de material, second the unlink boolean 
+            #remove(material, do_unlink=False by default)
+            bpy.data.materials.remove(bpy.data.materials['Origin_Cube_Material'],True)
+            bpy.data.materials.remove(bpy.data.materials['Text_Material'],True)
+            bpy.ops.object.select_all(action='DESELECT')
+
+        except:
+            bpy.ops.object.select_all(action='DESELECT')
+
+
+        #X-size and Y-size are stored in the X and Y sie values of the object
+        #Absorb coeff is stored in the alpha color value of the material
+        bpy.ops.mesh.primitive_cube_add(radius=1, view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+        bpy.context.object.name = 'Origin_Cube'
+        x_size= bpy.context.scene.my_tool.int_x_size / 10
+        real_x_size = bpy.context.scene.my_tool.int_x_size
+        y_size= bpy.context.scene.my_tool.int_y_size / 10
+        real_y_size = bpy.context.scene.my_tool.int_y_size
+        bpy.data.objects['Origin_Cube'].scale[0] = x_size
+        bpy.data.objects['Origin_Cube'].scale[1] = y_size
+        #Z axis size equal to (x+y)/2
+        z_size = (x_size+y_size)/2
+        bpy.data.objects['Origin_Cube'].scale[2] = z_size
+
+        #Space cube Material
+        origin_cube_mat = bpy.data.materials.new('Origin_Cube_Material')
+        origin_cube_mat.diffuse_color = (0, 0, 0)
+        origin_cube_mat.type='WIRE'
+        origin_cube_mat.use_transparency = True
+        density_mat_absorb_coeff = 1
+        origin_cube_mat.alpha = density_mat_absorb_coeff
+        bpy.data.objects['Origin_Cube'].data.materials.append(origin_cube_mat)
+
+        #Adding text to referene properties
+        text_scale=4
+
+        bpy.ops.object.text_add(radius=text_scale, view_align=False, enter_editmode=False, location=(-1*x_size, -1*(y_size+text_scale), -1*(z_size+0.5)), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+        bpy.context.object.name = 'X_size_text'
+        bpy.context.object.rotation_euler[0] = 0.523599
+        bpy.ops.object.editmode_toggle()
+        bpy.ops.font.delete()
+        bpy.ops.font.text_insert(text=" X: " + str(real_x_size) + " - Y: " + str(real_y_size))
+        bpy.ops.object.editmode_toggle()
+
+        bpy.ops.object.text_add(radius=text_scale, view_align=False, enter_editmode=False, location=(-1*x_size, -1*(y_size+text_scale*2.1), -1*(z_size+0.5)), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+        bpy.context.object.name = 'Abs_coeff_text'
+        bpy.context.object.rotation_euler[0] = 0.523599
+        bpy.ops.object.editmode_toggle()
+        bpy.ops.font.delete()
+        bpy.ops.font.text_insert(text=" Abs coeff: " + str(bpy.context.scene.my_tool.int_absorb_coeff))
+        bpy.ops.object.editmode_toggle()
+
+        bpy.ops.object.text_add(radius=text_scale, view_align=False, enter_editmode=False, location=(-1*(x_size + text_scale), y_size, -1*(z_size+0.5)), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+        bpy.context.object.name = 'Y_size_text'
+        bpy.context.object.rotation_euler[0] = 0.523599
+        bpy.context.object.rotation_euler[2] = -1.5708
+        bpy.ops.object.editmode_toggle()
+        bpy.ops.font.delete()
+        bpy.ops.font.text_insert(text=" Y: " + str(real_y_size))
+        bpy.ops.object.editmode_toggle()
+
+
+
+        #Texts material
+        text_mat = bpy.data.materials.new('Text_Material')
+        text_mat.diffuse_color = (0, 0, 0)
+        text_mat.type='SURFACE'
+        text_mat.use_transparency = True
+        density_mat_absorb_coeff = 0.95
+        text_mat.alpha = density_mat_absorb_coeff
+        bpy.data.objects['X_size_text'].data.materials.append(text_mat)
+        bpy.data.objects['Abs_coeff_text'].data.materials.append(text_mat)
+        bpy.data.objects['Y_size_text'].data.materials.append(text_mat)
+
+        return{'FINISHED'} 
+
+
+class OBJECT_OT_Initial_Object2(bpy.types.Operator):
+    bl_idname = "initial.object2"
+    bl_label = "Initial Object2"
+    country = bpy.props.StringProperty()
+
+    def execute(self, context):
+
+        bpy.data.objects['Lamp'].data.type = 'POINT'
+        bpy.data.objects['Lamp'].location = (0,0,10)
+        bpy.data.objects['Lamp'].rotation_euler = (0,0,10)
+
+        bpy.context.scene.world.horizon_color = (1, 1, 1)
+        bpy.context.scene.world.light_settings.use_ambient_occlusion = True
+
+
+        bpy.ops.object.select_all(action='DESELECT')
+
+        try:
+            bpy.data.objects['Gauss_Sphere'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['Gauss_Sphere'] 
+            bpy.ops.object.delete()
+            bpy.data.objects['Gauss_text'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['Gauss_text'] 
+            bpy.ops.object.delete()
+            bpy.data.materials.remove(bpy.data.materials['Gauss_Sphere_Material'],True)
+            bpy.data.materials.remove(bpy.data.materials['Text_Material_2'],True)
+
+        except:
+            bpy.ops.object.select_all(action='DESELECT')
+
+        try:
+            bpy.data.objects['Vortex'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['Vortex'] 
+            bpy.ops.object.delete()
+            bpy.data.objects['Vortex_text'].select = True
+            bpy.context.scene.objects.active = bpy.data.objects['Vortex_text'] 
+            bpy.ops.object.delete()
+            bpy.data.materials.remove(bpy.data.materials['Vortex_Material'],True)
+            bpy.data.materials.remove(bpy.data.materials['Text_Material_2'],True)
+
+        except:
+            bpy.ops.object.select_all(action='DESELECT')
+
+
+
+        if (bpy.context.scene.InitialObjects == "GaussBeam"):
+            #Gaussian 
+
+            #TODO read data from textbox at the GUI
+            x_gauss_pos = bpy.context.scene.my_tool.x_ob_pos / 10
+            y_gauss_pos = bpy.context.scene.my_tool.y_ob_pos / 10
+            z_gauss_pos = bpy.context.scene.my_tool.z_ob_pos / 10
+            gauss_size = 2
+            bpy.ops.mesh.primitive_uv_sphere_add(size=gauss_size, view_align=False, enter_editmode=False, location=(x_gauss_pos, y_gauss_pos, z_gauss_pos))
+            bpy.context.object.name = 'Gauss_Sphere'
+
+            #Gaussian Material, Absortion coeff will be represented by the volume density, transparency settings
+            gauss_sphere_material = bpy.data.materials.new('Gauss_Sphere_Material')
+            gauss_sphere_material.diffuse_color = (0.75, 0, 0)
+            gauss_sphere_material.type='SURFACE'
+            bpy.data.objects['Gauss_Sphere'].data.materials.append(gauss_sphere_material)
+
+            #Objects text
+            text_scale = 4
+            bpy.ops.object.text_add(radius=text_scale, view_align=False, enter_editmode=False, location=(x_gauss_pos, y_gauss_pos-text_scale, z_gauss_pos-0.5), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+            bpy.context.object.name = 'Gauss_text'
+            bpy.context.object.rotation_euler[0] = 0.523599
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.font.delete()
+            #TODO Read those from GUI
+            zR=bpy.context.scene.my_tool.zR_ob 
+            zini=bpy.context.scene.my_tool.zini_ob
+            bpy.ops.font.text_insert(text=" G, zR:" + str(zR) + ",zini:" + str(zini))
+            bpy.ops.object.editmode_toggle()
+
+
+            #Texts material
+            text_mat = bpy.data.materials.new('Text_Material_2')
+            text_mat.diffuse_color = (0, 0, 0)
+            text_mat.type='SURFACE'
+            text_mat.use_transparency = True
+            density_mat_absorb_coeff = 0.95
+            text_mat.alpha = density_mat_absorb_coeff
+            bpy.data.objects['Gauss_text'].data.materials.append(text_mat)
+
+        if (bpy.context.scene.InitialObjects == "Vortex"):
+            #Vortex
+
+            #TODO read data from textbox at the GUI
+            x_vortex_pos = bpy.context.scene.my_tool.x_ob_pos / 10
+            y_vortex_pos = bpy.context.scene.my_tool.y_ob_pos / 10
+            z_vortex_pos = bpy.context.scene.my_tool.z_ob_pos / 10
+            vortex_size = 2
+            bpy.ops.mesh.primitive_torus_add(rotation=(0, 0, 0), view_align=False, location=(x_vortex_pos, y_vortex_pos, z_vortex_pos), minor_segments=22, mode='MAJOR_MINOR', major_radius=0.88, minor_radius=0.70, abso_major_rad=1.25, abso_minor_rad=0.75)
+            bpy.context.object.scale[2] = 1.92
+            bpy.context.object.name = 'Vortex'
+            
+
+
+            #Gaussian Material, Absortion coeff will be represented by the volume density, transparency settings
+            vortex_material = bpy.data.materials.new('Vortex_Material')
+            vortex_material.diffuse_color = (0, 0.5, 1)
+            vortex_material.type='SURFACE'
+            bpy.data.objects['Vortex'].data.materials.append(vortex_material)
+
+            #Objects text
+            text_scale = 4
+            bpy.ops.object.text_add(radius=text_scale, view_align=False, enter_editmode=False, location=(x_vortex_pos, y_vortex_pos-text_scale, z_vortex_pos-0.5), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+            bpy.context.object.name = 'Vortex_text'
+            bpy.context.object.rotation_euler[0] = 0.523599
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.font.delete()
+            #TODO Read those from GUI
+            zR=4
+            zini=-5
+            bpy.ops.font.text_insert(text=" G, zR:" + str(zR) + ",zini:" + str(zini))
+            bpy.ops.object.editmode_toggle()
+
+
+            #Texts material
+            text_mat = bpy.data.materials.new('Text_Material_2')
+            text_mat.diffuse_color = (0, 0, 0)
+            text_mat.type='SURFACE'
+            text_mat.use_transparency = True
+            density_mat_absorb_coeff = 0.95
+            text_mat.alpha = density_mat_absorb_coeff
+            bpy.data.objects['Vortex_text'].data.materials.append(text_mat)
+
+        return{'FINISHED'} 
+
+class OBJECT_OT_Export_Parameters(bpy.types.Operator):
+    bl_idname = "export.parameters"
+    bl_label = "Export Parameters"
+    country = bpy.props.StringProperty()
+
+    def execute(self, context):
+
+        path = bpy.data.scenes['Scene'].my_tool.folder_path_export
+        f = open(path + 'initial_conditions.py', 'w+')
+        f.write("#Object type: " + bpy.data.scenes['Scene'].InitialObjects + "\r\n")
+        f.write("\r\n")
+        f.write("import numpy as np" + "\r\n")
+        f.write("\r\n")
+        f.write("Nx = 300" + "\r\n")
+        f.write("Ny = Nx" + "\r\n")
+        f.write("tmax = 10" + "\r\n")
+        f.write("dt = 0.001" + "\r\n")
+        f.write("xmax = " + str(bpy.data.scenes['Scene'].my_tool.int_x_size) + "\r\n")
+        f.write("ymax = " + str(bpy.data.scenes['Scene'].my_tool.int_y_size) + "\r\n")
+        f.write("\r\n")
+        f.write("x_ob_pos = " + str(bpy.data.scenes['Scene'].my_tool.x_ob_pos) + "\r\n")
+        f.write("y_ob_pos = " + str(bpy.data.scenes['Scene'].my_tool.y_ob_pos) + "\r\n")
+        f.write("z_ob_pos = " + str(bpy.data.scenes['Scene'].my_tool.z_ob_pos) + "\r\n")
+        f.write("\r\n")
+        f.write("images = 100" + "\r\n")
+        f.write("absorb_coeff = " + str(bpy.data.scenes['Scene'].my_tool.int_absorb_coeff) + "\r\n")
+        if (bpy.data.scenes['Scene'].InitialObjects == "GaussBeam"):
+            f.write("fixmaximum = 2/(4*np.pi)" + "\r\n") 
+        if (bpy.data.scenes['Scene'].InitialObjects == "Vortex"):
+            f.write("fixmaximum= 2/(4*np.pi*np.exp(1))" + "\r\n")
+        f.write("\r\n") 
+        f.write("\r\n")
+        f.write("def psi_0(x,y):" + "\r\n") 
+        f.write("\r\n")
+        f.write("   zR = " + str(bpy.data.scenes['Scene'].my_tool.zR_ob) + "\r\n")
+        f.write("   zR = " + str(bpy.data.scenes['Scene'].my_tool.zini_ob) + "\r\n")
+        f.write("   qini = 2*1.j*zini+zR" + "\r\n")
+        if (bpy.data.scenes['Scene'].InitialObjects == "Vortex"):
+            f.write("r=np.sqrt(x**2+y**2)" + "\r\n")
+            f.write("phase=np.exp(1.j*np.arctan2(y,x))" + "\r\n")
+        f.write("   f = np.sqrt(2*zR/np.pi)/qini*np.exp(-(x**2+y**2)/qini)" + "\r\n")
+        f.write("\r\n")
+        f.write("   return f;" + "\r\n")
+        f.write("\r\n") 
+        f.write("\r\n")
+        f.write("def V(x,y,t,psi):" + "\r\n")
+        f.write("   V=0" + "\r\n")
+        f.write("\r\n")
+        f.write("   return V;" + "\r\n")
+        f.close()
+
+        return{'FINISHED'} 
 
 class OBJECT_PT_my_panel(Panel):
     bl_idname = "OBJECT_PT_my_panel"
@@ -811,7 +1166,58 @@ class PanelSimulation(bpy.types.Panel):
         box0.prop(scn.my_tool, "int_box_particulas_Simulacion")
 
         box0.operator("particles.calculation", text="Calculate data")
+
+
+class PanelStartingParameters(bpy.types.Panel):
+    """Panel para añadir al entorno 3D"""
+    bl_label = "Starting Parameters Panel"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'TOOLS'
+    COMPAT_ENGINES = {'BLENDER_RENDER'}
+
+    def draw(self, context):
+        layout = self.layout
+        scn = context.scene
+        col = layout.column(align=True)
+        box01 = layout.box()
+
+        box01.label(text="INITIAL PARAMETERS")
+
+        box01.label(text="Environment", icon='META_CUBE')
        
+        box01.prop(scn.my_tool, "int_x_size")
+
+        box01.prop(scn.my_tool, "int_y_size")
+
+        box01.label(text="Absorb coeff, 0 = Periodic boundary")
+
+        box01.prop(scn.my_tool, "int_absorb_coeff")
+
+        box01.operator("initial.object", text="Create environment")
+
+        box01.label(text="Object", icon='META_BALL')
+
+        box01.label(text="Select object and properties")
+
+        box01.prop_search(context.scene, "InitialObjects", context.scene, "initialobjects", text="", icon='OBJECT_DATA' )
+
+        box01.prop(scn.my_tool, "x_ob_pos")
+
+        box01.prop(scn.my_tool, "y_ob_pos")
+
+        box01.prop(scn.my_tool, "z_ob_pos")
+
+        box01.prop(scn.my_tool, "zR_ob")
+
+        box01.prop(scn.my_tool, "zini_ob")
+
+        box01.operator("initial.object2", text="Create object")
+
+        box01.label(text="Select the folder where you will export the data", icon='FILE_FOLDER')
+
+        box01.prop(scn.my_tool, "folder_path_export", text="")
+
+        box01.operator("export.parameters", text="Export parameters")
 
 
 class PanelDataSelection(bpy.types.Panel):
@@ -1072,6 +1478,8 @@ def rellenar_selectores(scene):
     scene.calculationformats.clear()
     scene.planesnumber.clear()
     scene.planesproject.clear()
+    scene.planesproject.clear()
+    scene.initialobjects.clear()
 
     for identifier, name, description in image_format:
         scene.imageformats.add().name = name
@@ -1087,6 +1495,9 @@ def rellenar_selectores(scene):
 
     for identifier, name, description in planes_project:
         scene.planesproject.add().name = name
+
+    for identifier, name, description in initial_objects:
+        scene.initialobjects.add().name = name
 
 
 def register():
@@ -1112,6 +1523,10 @@ def register():
             type=bpy.types.PropertyGroup
         )
 
+    bpy.types.Scene.initialobjects = bpy.props.CollectionProperty(
+            type=bpy.types.PropertyGroup
+        )
+
     bpy.types.Scene.ImageFormat = bpy.props.StringProperty()
 
     bpy.types.Scene.VideoFormat = bpy.props.StringProperty()
@@ -1121,6 +1536,8 @@ def register():
     bpy.types.Scene.PlanesNumber = bpy.props.StringProperty()
 
     bpy.types.Scene.PlanesProject = bpy.props.StringProperty()
+
+    bpy.types.Scene.InitialObjects = bpy.props.StringProperty()
 
     bpy.app.handlers.scene_update_pre.append(rellenar_selectores)
 
