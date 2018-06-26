@@ -453,6 +453,165 @@ class OBJECT_OT_RenderAllButton(bpy.types.Operator):
 
         return{'FINISHED'} 
 
+#Renders all objects one by one jumping between states and do projections
+class OBJECT_OT_RenderAllProjButton(bpy.types.Operator):
+    bl_idname = "render_all_proj.image"
+    bl_label = "RenderizarAllImagenProj"
+    country = bpy.props.StringProperty()
+
+
+    #This code 
+    def execute(self, context):
+
+        dir_image_path = bpy.data.scenes['Scene'].my_tool.image_path
+
+        #Define an error message if occurs a problem during the run, is showed using a popup
+        def error_message(self, context):
+            self.layout.label("Unable to save the Renders. Try again with other path")
+
+        #Calculate the total of states
+        #Calculate the total of states
+        try:
+            path = bpy.data.scenes['Scene'].my_tool.path #Origin from where the data will be readen, selected by the first option in the Panel
+            file_with_binary_data = open(path, 'rb+') #File with binary data
+
+            array_with_all_data = np.load(file_with_binary_data) #Gets the binary data as an array with 6 vectors (x_data, x_probability, y_data, y_probability, z_data, z_probability)
+       
+            #Matrix with the data of the 2D grid
+            array_3d = array_with_all_data['arr_0'] 
+
+            total_states = len(array_3d)
+
+            file_with_binary_data.close()
+
+        except:
+            bpy.context.window_manager.popup_menu(error_message, title="An error ocurred", icon='CANCEL')
+
+
+        for x in range(int(total_states)):
+
+            try:    
+                #Set the image format, PNG by default
+                bpy.context.scene.render.image_settings.file_format = bpy.context.scene['ImageFormat']
+
+            except:        
+                bpy.context.scene.render.image_settings.file_format = 'PNG'
+
+            try:
+
+                #Sets the path where the file will be stored, by default the same as the datafile
+                if dir_image_path == "":
+                    bpy.data.scenes['Scene'].render.filepath = bpy.data.scenes['Scene'].my_tool.path + str(x) + '.jpg'
+                    
+                    #Define a confirmation message to the default path            
+                    def confirm_message(self, context):
+                        self.layout.label("Render image saved at: " + bpy.data.scenes['Scene'].my_tool.path )
+
+                else:                
+                    bpy.data.scenes['Scene'].render.filepath = dir_image_path + str(x) + '.jpg'
+                   
+                    #Define a confirmation message to the selected path 
+                    def confirm_message(self, context):
+                        self.layout.label("Rendered image saved at: " + dir_image_path )   
+
+                #Projections in X and Z axis using default values
+                bpy.context.scene.PlanesProject = "XZ"
+                bpy.ops.place.planeproject()
+                bpy.ops.particle.projection()
+                bpy.ops.delete.planeproject()
+
+                bpy.ops.render.render( write_still=True ) 
+
+                bpy.ops.particle.forward()
+                
+
+            except:
+                bpy.context.window_manager.popup_menu(error_message, title="An error ocurred", icon='CANCEL')
+
+
+        bpy.context.window_manager.popup_menu(confirm_message, title="Saved successful", icon='SCENE')
+
+        return{'FINISHED'} 
+
+#Renders all objects one by one jumping between states and do cuts
+class OBJECT_OT_RenderAllCutButton(bpy.types.Operator):
+    bl_idname = "render_all_cut.image"
+    bl_label = "RenderizarAllImagenCut"
+    country = bpy.props.StringProperty()
+
+
+    #This code 
+    def execute(self, context):
+
+        dir_image_path = bpy.data.scenes['Scene'].my_tool.image_path
+
+        #Define an error message if occurs a problem during the run, is showed using a popup
+        def error_message(self, context):
+            self.layout.label("Unable to save the Renders. Try again with other path")
+
+        #Calculate the total of states
+        #Calculate the total of states
+        try:
+            path = bpy.data.scenes['Scene'].my_tool.path #Origin from where the data will be readen, selected by the first option in the Panel
+            file_with_binary_data = open(path, 'rb+') #File with binary data
+
+            array_with_all_data = np.load(file_with_binary_data) #Gets the binary data as an array with 6 vectors (x_data, x_probability, y_data, y_probability, z_data, z_probability)
+       
+            #Matrix with the data of the 2D grid
+            array_3d = array_with_all_data['arr_0'] 
+
+            total_states = len(array_3d)
+
+            file_with_binary_data.close()
+
+        except:
+            bpy.context.window_manager.popup_menu(error_message, title="An error ocurred", icon='CANCEL')
+
+
+        for x in range(int(total_states)):
+
+            try:    
+                #Set the image format, PNG by default
+                bpy.context.scene.render.image_settings.file_format = bpy.context.scene['ImageFormat']
+
+            except:        
+                bpy.context.scene.render.image_settings.file_format = 'PNG'
+
+            try:
+
+                #Sets the path where the file will be stored, by default the same as the datafile
+                if dir_image_path == "":
+                    bpy.data.scenes['Scene'].render.filepath = bpy.data.scenes['Scene'].my_tool.path + str(x) + '.jpg'
+                    
+                    #Define a confirmation message to the default path            
+                    def confirm_message(self, context):
+                        self.layout.label("Render image saved at: " + bpy.data.scenes['Scene'].my_tool.path )
+
+                else:                
+                    bpy.data.scenes['Scene'].render.filepath = dir_image_path + str(x) + '.jpg'
+                   
+                    #Define a confirmation message to the selected path 
+                    def confirm_message(self, context):
+                        self.layout.label("Rendered image saved at: " + dir_image_path )   
+
+                #Cut using 2 planes with default values
+                bpy.context.scene.PlanesNumber = "2P"
+                bpy.ops.place.plane()
+                bpy.ops.particle.cut()
+                bpy.ops.delete.plane()
+
+                bpy.ops.render.render( write_still=True ) 
+
+                bpy.ops.particle.forward()
+                
+
+            except:
+                bpy.context.window_manager.popup_menu(error_message, title="An error ocurred", icon='CANCEL')
+
+
+        bpy.context.window_manager.popup_menu(confirm_message, title="Saved successful", icon='SCENE')
+
+        return{'FINISHED'} 
 
 class OBJECT_OT_RenderVideoButton(bpy.types.Operator):
     bl_idname = "render.video"
@@ -840,12 +999,35 @@ class OBJECT_OT_Template_4(bpy.types.Operator):
 
         return{'FINISHED'} 
 
+
+#Initial conditions code
+
+class OBJECT_OT_Split_Screen(bpy.types.Operator):
+    bl_idname = "split.screen"
+    bl_label = "Split Screen"
+    country = bpy.props.StringProperty()
+
+    def execute(self, context):
+        start_areas = context.screen.areas[:]
+        bpy.ops.screen.area_split(direction='HORIZONTAL', factor=0.3)
+        for area in context.screen.areas:
+            if area not in start_areas:
+                area.type = 'VIEW_3D'
+
+        bpy.context.space_data.lock_camera_and_layers = False
+
+        return{'FINISHED'}
+
+
 class OBJECT_OT_Initial_Object(bpy.types.Operator):
     bl_idname = "initial.object"
     bl_label = "Initial Object"
     country = bpy.props.StringProperty()
 
     def execute(self, context):
+
+        bpy.context.scene.layers[0]=True
+        bpy.context.scene.layers[1]=False
 
         bpy.data.objects['Lamp'].data.type = 'POINT'
         bpy.data.objects['Lamp'].location = (0,0,10)
@@ -947,12 +1129,19 @@ class OBJECT_OT_Initial_Object(bpy.types.Operator):
         return{'FINISHED'} 
 
 
+
 class OBJECT_OT_Initial_Object2(bpy.types.Operator):
     bl_idname = "initial.object2"
     bl_label = "Initial Object2"
     country = bpy.props.StringProperty()
 
     def execute(self, context):
+
+        bpy.context.scene.layers[0]=False
+        bpy.context.scene.layers[1]=True
+
+        bpy.context.space_data.lock_camera_and_layers = False
+
 
         bpy.data.objects['Lamp'].data.type = 'POINT'
         bpy.data.objects['Lamp'].location = (0,0,10)
@@ -995,12 +1184,11 @@ class OBJECT_OT_Initial_Object2(bpy.types.Operator):
         if (bpy.context.scene.InitialObjects == "GaussBeam"):
             #Gaussian 
 
-            #TODO read data from textbox at the GUI
             x_gauss_pos = bpy.context.scene.my_tool.x_ob_pos / 10
             y_gauss_pos = bpy.context.scene.my_tool.y_ob_pos / 10
             z_gauss_pos = bpy.context.scene.my_tool.z_ob_pos / 10
             gauss_size = 2
-            bpy.ops.mesh.primitive_uv_sphere_add(size=gauss_size, view_align=False, enter_editmode=False, location=(x_gauss_pos, y_gauss_pos, z_gauss_pos))
+            bpy.ops.mesh.primitive_uv_sphere_add(size=gauss_size, view_align=False, enter_editmode=False, location=(x_gauss_pos, y_gauss_pos, z_gauss_pos), layers=(False, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
             bpy.context.object.name = 'Gauss_Sphere'
 
             #Gaussian Material, Absortion coeff will be represented by the volume density, transparency settings
@@ -1011,12 +1199,11 @@ class OBJECT_OT_Initial_Object2(bpy.types.Operator):
 
             #Objects text
             text_scale = 4
-            bpy.ops.object.text_add(radius=text_scale, view_align=False, enter_editmode=False, location=(x_gauss_pos, y_gauss_pos-text_scale, z_gauss_pos-0.5), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+            bpy.ops.object.text_add(radius=text_scale, view_align=False, enter_editmode=False, location=(x_gauss_pos, y_gauss_pos-text_scale, z_gauss_pos-0.5), layers=(False, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
             bpy.context.object.name = 'Gauss_text'
             bpy.context.object.rotation_euler[0] = 0.523599
             bpy.ops.object.editmode_toggle()
             bpy.ops.font.delete()
-            #TODO Read those from GUI
             zR=bpy.context.scene.my_tool.zR_ob 
             zini=bpy.context.scene.my_tool.zini_ob
             bpy.ops.font.text_insert(text=" G, zR:" + str(zR) + ",zini:" + str(zini))
@@ -1034,19 +1221,16 @@ class OBJECT_OT_Initial_Object2(bpy.types.Operator):
 
         if (bpy.context.scene.InitialObjects == "Vortex"):
             #Vortex
-
-            #TODO read data from textbox at the GUI
             x_vortex_pos = bpy.context.scene.my_tool.x_ob_pos / 10
             y_vortex_pos = bpy.context.scene.my_tool.y_ob_pos / 10
             z_vortex_pos = bpy.context.scene.my_tool.z_ob_pos / 10
             vortex_size = 2
-            bpy.ops.mesh.primitive_torus_add(rotation=(0, 0, 0), view_align=False, location=(x_vortex_pos, y_vortex_pos, z_vortex_pos), minor_segments=22, mode='MAJOR_MINOR', major_radius=0.88, minor_radius=0.70, abso_major_rad=1.25, abso_minor_rad=0.75)
+            bpy.ops.mesh.primitive_torus_add(rotation=(0, 0, 0), view_align=False, location=(x_vortex_pos, y_vortex_pos, z_vortex_pos), minor_segments=22, mode='MAJOR_MINOR', major_radius=0.88, minor_radius=0.70, abso_major_rad=1.25, abso_minor_rad=0.75, layers=(False, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
             bpy.context.object.scale[2] = 1.92
             bpy.context.object.name = 'Vortex'
             
 
-
-            #Gaussian Material, Absortion coeff will be represented by the volume density, transparency settings
+            #Vortex Material, Absortion coeff will be represented by the volume density, transparency settings
             vortex_material = bpy.data.materials.new('Vortex_Material')
             vortex_material.diffuse_color = (0, 0.5, 1)
             vortex_material.type='SURFACE'
@@ -1054,14 +1238,13 @@ class OBJECT_OT_Initial_Object2(bpy.types.Operator):
 
             #Objects text
             text_scale = 4
-            bpy.ops.object.text_add(radius=text_scale, view_align=False, enter_editmode=False, location=(x_vortex_pos, y_vortex_pos-text_scale, z_vortex_pos-0.5), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+            bpy.ops.object.text_add(radius=text_scale, view_align=False, enter_editmode=False, location=(x_vortex_pos, y_vortex_pos-text_scale, z_vortex_pos-0.5), layers=(False, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
             bpy.context.object.name = 'Vortex_text'
             bpy.context.object.rotation_euler[0] = 0.523599
             bpy.ops.object.editmode_toggle()
             bpy.ops.font.delete()
-            #TODO Read those from GUI
-            zR=4
-            zini=-5
+            zR=bpy.context.scene.my_tool.zR_ob 
+            zini=bpy.context.scene.my_tool.zini_ob
             bpy.ops.font.text_insert(text=" G, zR:" + str(zR) + ",zini:" + str(zini))
             bpy.ops.object.editmode_toggle()
 
@@ -1083,7 +1266,6 @@ class OBJECT_OT_Export_Parameters(bpy.types.Operator):
     country = bpy.props.StringProperty()
 
     def execute(self, context):
-
         path = bpy.data.scenes['Scene'].my_tool.folder_path_export
         f = open(path + 'initial_conditions.py', 'w+')
         f.write("#Object type: " + bpy.data.scenes['Scene'].InitialObjects + "\r\n")
@@ -1115,8 +1297,8 @@ class OBJECT_OT_Export_Parameters(bpy.types.Operator):
         f.write("   zR = " + str(bpy.data.scenes['Scene'].my_tool.zini_ob) + "\r\n")
         f.write("   qini = 2*1.j*zini+zR" + "\r\n")
         if (bpy.data.scenes['Scene'].InitialObjects == "Vortex"):
-            f.write("r=np.sqrt(x**2+y**2)" + "\r\n")
-            f.write("phase=np.exp(1.j*np.arctan2(y,x))" + "\r\n")
+            f.write("   r=np.sqrt(x**2+y**2)" + "\r\n")
+            f.write("   phase=np.exp(1.j*np.arctan2(y,x))" + "\r\n")
         f.write("   f = np.sqrt(2*zR/np.pi)/qini*np.exp(-(x**2+y**2)/qini)" + "\r\n")
         f.write("\r\n")
         f.write("   return f;" + "\r\n")
@@ -1182,6 +1364,8 @@ class PanelStartingParameters(bpy.types.Panel):
         box01 = layout.box()
 
         box01.label(text="INITIAL PARAMETERS")
+
+        box01.operator("areatype.splitview", text="Split Screen")
 
         box01.label(text="Environment", icon='META_CUBE')
        
@@ -1434,6 +1618,10 @@ class PanelRenderData(bpy.types.Panel):
         box3.operator("render.image", text="Save image")
 
         box3.operator("render_all.image", text="Save all images")
+
+        box3.operator("render_all_proj.image", text="Save all images + projections")
+
+        box3.operator("render_all_cut.image", text="Save all images + cuts")
 
         box3.label(text="Select the video format (AVI by default)", icon='RENDER_ANIMATION')
 
@@ -2777,3 +2965,62 @@ def unregister():
 # to test the addon without having to install it.
 if __name__ == "__main__":
     register()  
+
+
+
+
+#*************************************************************************# 
+# ----------------------------------------------------------------------- #
+#    Split Screen code                                                    #
+# ----------------------------------------------------------------------- #
+#*************************************************************************# 
+
+
+class AREATYPE_OT_split(bpy.types.Operator):
+    bl_idname = "areatype.splitview"
+    bl_label = "areatype.splitview"
+    def execute(self,context):
+        thisarea = context.area
+        otherarea = None
+        tgxvalue = thisarea.x + thisarea.width + 1
+        thistype = context.area.type
+        arealist = list(context.screen.areas)
+        for area in context.screen.areas:
+            if area == thisarea:
+                continue
+            elif area.x == tgxvalue and area.y == thisarea.y:
+                otherarea = area
+                break
+        if otherarea:
+            bpy.ops.screen.area_join(min_x=thisarea.x,min_y=thisarea.y,max_x=otherarea.x,max_y=otherarea.y)
+            bpy.ops.screen.screen_full_area()
+            bpy.ops.screen.screen_full_area()
+            return {"FINISHED"}
+        else:
+            context.area.type = "VIEW_3D"
+            areax = None
+            bpy.ops.screen.area_split(direction="VERTICAL")
+            bpy.ops.screen.area_split(direction="HORIZONTAL")
+            for area in context.screen.areas:
+                if area not in arealist:
+                    areax = area
+                    break
+            if areax:
+                areax.type = thistype
+                return {"FINISHED"}
+        return {"CANCELLED"}
+
+
+def viewdraw(self,context):
+    layout = self.layout
+    layout.operator("areatype.splitview",text="",icon="COLOR_BLUE")
+
+
+def register():
+    bpy.types.VIEW3D_HT_header.prepend(viewdraw)
+    bpy.utils.register_module(__name__)
+
+
+def unregister():
+    bpy.types.VIEW3D_HT_header.remove(viewdraw)
+    bpy.utils.unregister_module(__name__)
