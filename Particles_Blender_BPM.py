@@ -212,6 +212,20 @@ class MySettings(PropertyGroup):
         min = 0, max = 100,
         default = 10) 
 
+    int_box_frames = IntProperty(
+        name="Frames per step", 
+        description="Frames captured for each time step",
+        min = 1, max = 10000000,
+        default = 1)
+
+    int_box_total_frames = IntProperty(
+        name="Total frames", 
+        description="Total of frames that will be rendered",
+        min = 1, max = 1000000000,
+        default = 1)
+
+
+
 #*************************************************************************# 
 # ----------------------------------------------------------------------- #
 #    Panel class                                                          #
@@ -515,7 +529,7 @@ class OBJECT_OT_RenderAllProjButton(bpy.types.Operator):
                         self.layout.label("Rendered image saved at: " + dir_image_path )   
 
                 #Projections in X and Z axis using default values
-                bpy.context.scene.PlanesProject = "XZ"
+                #bpy.context.scene.PlanesProject = "XZ"
                 bpy.ops.place.planeproject()
                 bpy.ops.particle.projection()
                 bpy.ops.delete.planeproject()
@@ -612,6 +626,87 @@ class OBJECT_OT_RenderAllCutButton(bpy.types.Operator):
         bpy.context.window_manager.popup_menu(confirm_message, title="Saved successful", icon='SCENE')
 
         return{'FINISHED'} 
+
+
+
+#Renders all objects one by one jumping between states and do cuts
+class OBJECT_OT_RenderAllFrame(bpy.types.Operator):
+    bl_idname = "render_all_frame.image"
+    bl_label = "RenderizarAllImagenFrame"
+    country = bpy.props.StringProperty()
+
+
+    #This code 
+    def execute(self, context):
+
+        dir_image_path = bpy.data.scenes['Scene'].my_tool.image_path
+
+        #Define an error message if occurs a problem during the run, is showed using a popup
+        def error_message(self, context):
+            self.layout.label("Unable to save the Renders. Try again with other path")
+
+        try:
+            frames_to_change = bpy.context.scene.my_tool.int_box_frames 
+            total_frames = bpy.context.scene.my_tool.int_box_total_frames 
+
+        except:
+            bpy.context.window_manager.popup_menu(error_message, title="An error ocurred", icon='CANCEL')
+
+
+        for x in range(int(total_frames)):
+
+            try:    
+                #Set the image format, PNG by default
+                bpy.context.scene.render.image_settings.file_format = bpy.context.scene['ImageFormat']
+
+            except:        
+                bpy.context.scene.render.image_settings.file_format = 'PNG'
+
+            try:
+
+                #Sets the path where the file will be stored, by default the same as the datafile
+                if dir_image_path == "":
+                    bpy.data.scenes['Scene'].render.filepath = bpy.data.scenes['Scene'].my_tool.path + str(x) + '.jpg'
+                    
+                    #Define a confirmation message to the default path            
+                    def confirm_message(self, context):
+                        self.layout.label("Render image saved at: " + bpy.data.scenes['Scene'].my_tool.path )
+
+                else:                
+                    bpy.data.scenes['Scene'].render.filepath = dir_image_path + str(x) + '.jpg'
+                   
+                    #Define a confirmation message to the selected path 
+                    def confirm_message(self, context):
+                        self.layout.label("Rendered image saved at: " + dir_image_path )   
+
+                #Cut using 2 planes with default values
+                #bpy.context.scene.PlanesNumber = "2P"
+                #bpy.ops.place.plane()
+                #bpy.ops.particle.cut()
+                #bpy.ops.delete.plane()
+
+                bpy.ops.render.render( write_still=True ) 
+
+                frames_to_change -= 1
+
+                if (frames_to_change == 0):
+                    bpy.ops.particle.forward()
+                    frames_to_change = bpy.context.scene.my_tool.int_box_frames
+
+                else:
+                    bpy.context.scene.frame_current += 1
+ 
+                
+
+            except:
+                bpy.context.window_manager.popup_menu(error_message, title="An error ocurred", icon='CANCEL')
+
+
+        bpy.context.window_manager.popup_menu(confirm_message, title="Saved successful", icon='SCENE')
+
+        return{'FINISHED'} 
+
+
 
 class OBJECT_OT_RenderVideoButton(bpy.types.Operator):
     bl_idname = "render.video"
@@ -1622,6 +1717,14 @@ class PanelRenderData(bpy.types.Panel):
         box3.operator("render_all_proj.image", text="Save all images + projections")
 
         box3.operator("render_all_cut.image", text="Save all images + cuts")
+
+        box3.label(text="Video frame by frame", icon='CAMERA_DATA')
+
+        box3.prop(scn.my_tool, "int_box_frames")
+
+        box3.prop(scn.my_tool, "int_box_total_frames")
+
+        box3.operator("render_all_frame.image", text="Save all images as film")
 
         box3.label(text="Select the video format (AVI by default)", icon='RENDER_ANIMATION')
 
