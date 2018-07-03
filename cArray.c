@@ -34,7 +34,48 @@ double **pymatrix_to_Carrayptrs(PyArrayObject *arrayin)  {
 }
 
 
-/*Function that returns a random number between a range, C internal use*/
+/*Function that returns the max value of a 2D PSI matrix*/
+double maxValue2D(PyArrayObject *matin)
+{
+    int f_in=matin->dimensions[0]; //Obtain the size of the matrix
+    int c_in=matin->dimensions[1];
+
+    double max = *((double *)PyArray_GETPTR2(matin,0,0)); //Set the first value
+        
+    for (int x = 0; x < f_in; x++){                         //iterate over the matrix
+        for (int y = 0; y < c_in; y++){
+            if (max < *((double *)PyArray_GETPTR2(matin,x,y))) //Compare the values
+            {
+                max = *((double *)PyArray_GETPTR2(matin,x,y)); //Set a new max value
+            }
+        }
+    }   
+    return max;
+}
+
+/*Function that returns the max value of a 3D PSI matrix*/
+double maxValue3D(PyArrayObject *matin)
+{
+    int f_in=matin->dimensions[0]; //Obtain the size of the matrix
+    int c_in=matin->dimensions[1];
+    int e_in=matin->dimensions[2];
+
+    double max = *((double *)PyArray_GETPTR3(matin,0,0,0)); //Set the first value
+        
+    for (int x = 0; x < f_in; x++){                         //iterate over the matrix
+        for (int y = 0; y < c_in; y++){
+            for (int z = 0; z < e_in; z++){
+                if (max < *((double *)PyArray_GETPTR3(matin,x,y,z))) //Compare the values
+                {
+                    max = *((double *)PyArray_GETPTR3(matin,x,y,z)); //Set a new max value
+                }
+            }
+        }
+    }   
+    return max;
+}
+
+/*Function that returns a random number between a range*/
 double randomInRange(double min, double max)
 {
     double scale = rand() / (double) RAND_MAX; /* [0, 1.0] */
@@ -74,13 +115,15 @@ static PyObject* matrix2D(PyObject* self, PyObject* args)
     int random_pointer_x = 0;
     int random_pointer_y = 0;
 
+    double maxPSIValue = maxValue2D(matin);
+
     for (int i=0; i<f_out; i++)  {
-        random = randomInRange(0,1.0);
+        random = randomInRange(0,maxPSIValue);
         random_pointer_x = (int) randomInRange(0,f_in);
         random_pointer_y = (int) randomInRange(0,c_in);
         while (random > cin[random_pointer_x][random_pointer_y])
         {
-            random = randomInRange(0,1);
+            random = randomInRange(0,maxPSIValue);
             random_pointer_x = (int) randomInRange(0,f_in);
             random_pointer_y = (int) randomInRange(0,c_in);
         }
@@ -124,13 +167,15 @@ static PyObject* matrix2Dprob(PyObject* self, PyObject* args)
     int random_pointer_x = 0;
     int random_pointer_y = 0;
 
+    double maxPSIValue = maxValue2D(matin);
+
     for (int i=0; i<f_out; i++)  {
-        random = randomInRange(0,1.0);
+        random = randomInRange(0,maxPSIValue);
         random_pointer_x = (int) randomInRange(0,f_in);
         random_pointer_y = (int) randomInRange(0,c_in);
         while (random > cin[random_pointer_x][random_pointer_y])
         {
-            random = randomInRange(0,1);
+            random = randomInRange(0,maxPSIValue);
             random_pointer_x = (int) randomInRange(0,f_in);
             random_pointer_y = (int) randomInRange(0,c_in);
         }
@@ -177,14 +222,16 @@ static PyObject* matrix3Dprob(PyObject* self, PyObject* args)
     int rand_y = 0;
     int rand_z = 0;
 
+    double maxPSIValue = maxValue3D(matin);
+
     for (int i=0; i<f_out; i++)  {
-        random = randomInRange(0,1.0);
+        random = randomInRange(0,maxPSIValue);
         rand_x = (int) randomInRange(0,f_in);
         rand_y = (int) randomInRange(0,c_in);
         rand_z = (int) randomInRange(0,e_in);
         while (random > *((double *)PyArray_GETPTR3(matin,rand_x,rand_y,rand_z)))
         {
-            random = randomInRange(0,1);
+            random = randomInRange(0,maxPSIValue);
             rand_x = (int) randomInRange(0,f_in);
             rand_y = (int) randomInRange(0,c_in);
             rand_z = (int) randomInRange(0,e_in);
@@ -248,11 +295,11 @@ static PyMethodDef myMethods[] = {
 };
  
 static struct PyModuleDef cArray = {
-	PyModuleDef_HEAD_INIT,
-	"cArray", //name of module.
-	"Array calculation Module",
-	-1,
-	myMethods
+    PyModuleDef_HEAD_INIT,
+    "cArray", //name of module.
+    "Array calculation Module",
+    -1,
+    myMethods
 };
 
 PyMODINIT_FUNC PyInit_cArray(void)
