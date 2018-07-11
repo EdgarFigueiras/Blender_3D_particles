@@ -1,5 +1,5 @@
 import bpy
-import cArray
+#import cArray
 import time
 import math
 import random
@@ -223,6 +223,12 @@ class MySettings(PropertyGroup):
         description="Total of frames that will be rendered",
         min = 1, max = 1000000000,
         default = 1)
+
+    int_box_particles_size = IntProperty(
+        name="Particles size", 
+        description="Value to scale the particles size",
+        min = 1, max = 1000,
+        default = 100)
 
 
 
@@ -1528,6 +1534,8 @@ class PanelDataSelection(bpy.types.Panel):
 
         box2.label(text="SIMULATION")
 
+        box2.prop(scn.my_tool, "int_box_particles_size")
+
         box2.operator("particle.calculator", text="Place Particles")
 
         box2.operator("add.colors", text="Add Colors")
@@ -2031,7 +2039,9 @@ class ParticleCalculator(bpy.types.Operator):
         # Physics
         psys1.settings.physics_type = 'NEWTON'
         psys1.settings.mass = 0
-        psys1.settings.particle_size = 1000 #Remember the object scale 0.0001 of the icospheres to not be showed in the visualization
+        #Takes from GUI the size to scale particles
+        particles_selected_size = bpy.data.scenes['Scene'].my_tool.int_box_particles_size
+        psys1.settings.particle_size = particles_selected_size #Remember the object scale 0.0001 of the icospheres to not be showed in the visualization
         psys1.settings.use_multiply_size_mass = False
      
         # Effector weights
@@ -2667,7 +2677,7 @@ class ParticlesCalculation(bpy.types.Operator):
                 #Matrix with the data of the 2D grid
                 Z = array_with_all_data['arr_0'] 
                 
-                cArray.matrix2Dprob(Z, array_aux)
+                #cArray.matrix2Dprob(Z, array_aux)
 
                 matrix_3d[cont_file]=array_aux
 
@@ -2682,7 +2692,7 @@ class ParticlesCalculation(bpy.types.Operator):
                 #Matrix with the data of the 3D grid
                 Z = array_with_all_data['arr_0'] 
 
-                cArray.matrix3Dprob(Z, array_aux)
+                #cArray.matrix3Dprob(Z, array_aux)
 
                 matrix_3d[cont_file]=array_aux
 
