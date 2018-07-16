@@ -225,13 +225,13 @@ static PyObject* matrix3Dprob(PyObject* self, PyObject* args)
     double maxPSIValue = maxValue3D(matin);
     
     for (int i=0; i<f_out; i++)  {
-        random = randomInRange(0, 1);
+        random = randomInRange(0, maxPSIValue);
         rand_x = (int) randomInRange(0,f_in);
         rand_y = (int) randomInRange(0,c_in);
         rand_z = (int) randomInRange(0,e_in);
         while (random > *((double *)PyArray_GETPTR3(matin,rand_x,rand_y,rand_z)))
         {
-            random = randomInRange(0, 1);
+            random = randomInRange(0, maxPSIValue);
             rand_x = (int) randomInRange(0,f_in);
             rand_y = (int) randomInRange(0,c_in);
             rand_z = (int) randomInRange(0,e_in);
