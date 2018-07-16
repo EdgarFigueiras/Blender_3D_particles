@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 /* ==== Allocate a double *vector (vec of pointers) ======================
-    Memory is Allocated!  See void free_Carray(double ** )                  */
+ Memory is Allocated!  See void free_Carray(double ** )                  */
 double **ptrvector(long n)  {
     double **v;
     v=(double **)malloc((size_t) (n*sizeof(double)));
@@ -18,8 +18,8 @@ double **ptrvector(long n)  {
 }
 
 /* ==== Create Carray from PyArray ======================
-    Assumes PyArray is contiguous in memory.
-    Memory is allocated!                                    */
+ Assumes PyArray is contiguous in memory.
+ Memory is allocated!                                    */
 double **pymatrix_to_Carrayptrs(PyArrayObject *arrayin)  {
     double **c, *a;
     int i,n,m;
@@ -39,9 +39,9 @@ double maxValue2D(PyArrayObject *matin)
 {
     int f_in=matin->dimensions[0]; //Obtain the size of the matrix
     int c_in=matin->dimensions[1];
-
+    
     double max = *((double *)PyArray_GETPTR2(matin,0,0)); //Set the first value
-        
+    
     for (int x = 0; x < f_in; x++){                         //iterate over the matrix
         for (int y = 0; y < c_in; y++){
             if (max < *((double *)PyArray_GETPTR2(matin,x,y))) //Compare the values
@@ -49,7 +49,7 @@ double maxValue2D(PyArrayObject *matin)
                 max = *((double *)PyArray_GETPTR2(matin,x,y)); //Set a new max value
             }
         }
-    }   
+    }
     return max;
 }
 
@@ -59,9 +59,9 @@ double maxValue3D(PyArrayObject *matin)
     int f_in=matin->dimensions[0]; //Obtain the size of the matrix
     int c_in=matin->dimensions[1];
     int e_in=matin->dimensions[2];
-
+    
     double max = *((double *)PyArray_GETPTR3(matin,0,0,0)); //Set the first value
-        
+    
     for (int x = 0; x < f_in; x++){                         //iterate over the matrix
         for (int y = 0; y < c_in; y++){
             for (int z = 0; z < e_in; z++){
@@ -71,7 +71,7 @@ double maxValue3D(PyArrayObject *matin)
                 }
             }
         }
-    }   
+    }
     return max;
 }
 
@@ -80,43 +80,43 @@ double randomInRange(double min, double max)
 {
     double scale = rand() / (double) RAND_MAX; /* [0, 1.0] */
     return min + scale * ( max - min );      /* [min, max] */
-
+    
 }
 
 
 /* ==== Operate on Matrix components  =========================
-   Access to the introduced matrix data to calculate 3d points using MonteCarlo funciont with random numbers
-  
-    Sets the values in the inserted matout NumPy array and gives 3d space points
-    interface:  matrix2D(matin, matout)
-                matin is the psi values NumPy matrix, matout is the output values matrix(matrix[number_points][3] )
-*/
+ Access to the introduced matrix data to calculate 3d points using MonteCarlo funciont with random numbers
+ 
+ Sets the values in the inserted matout NumPy array and gives 3d space points
+ interface:  matrix2D(matin, matout)
+ matin is the psi values NumPy matrix, matout is the output values matrix(matrix[number_points][3] )
+ */
 static PyObject* matrix2D(PyObject* self, PyObject* args)
 {
     PyArrayObject *matin, *matout;
-    double **cin, **cout;   
+    double **cin, **cout;
     int n = 0;                      //If 0 at debug then something failed, else returns 1
     int f_in, c_in, f_out, c_out;
-
+    
     if (!PyArg_ParseTuple(args, "OO", &matin, &matout))
         return NULL;
-
+    
     cin=pymatrix_to_Carrayptrs(matin);
     cout=pymatrix_to_Carrayptrs(matout);
-
+    
     
     f_in=matin->dimensions[0];
     c_in=matin->dimensions[1];
-
+    
     f_out=matout->dimensions[0];
     c_out=matout->dimensions[1];
-
+    
     double random = 0;
     int random_pointer_x = 0;
     int random_pointer_y = 0;
-
+    
     double maxPSIValue = maxValue2D(matin);
-
+    
     for (int i=0; i<f_out; i++)  {
         random = randomInRange(0,maxPSIValue);
         random_pointer_x = (int) randomInRange(0,f_in);
@@ -131,44 +131,44 @@ static PyObject* matrix2D(PyObject* self, PyObject* args)
         cout[i][1] = random_pointer_y - f_in/2 + randomInRange(0,0.82); //because the final objective is show them in a 3D grid
         cout[i][2] = random;
     }
-
+    
     n=1;
     return Py_BuildValue("i", n);
 }
 
 /* ==== Operate on Matrix components  =========================
-   Access to the introduced matrix data to calculate 3d points using MonteCarlo funciont with random numbers
-  
-    Sets the values in the inserted matout NumPy array and gives 3d space points and the probability [4]
-    interface:  matrix2Dprob(matin, matout)
-                matin is the psi values NumPy matrix, matout is the output values matrix(matrix[number_points][4] )
-*/
+ Access to the introduced matrix data to calculate 3d points using MonteCarlo funciont with random numbers
+ 
+ Sets the values in the inserted matout NumPy array and gives 3d space points and the probability [4]
+ interface:  matrix2Dprob(matin, matout)
+ matin is the psi values NumPy matrix, matout is the output values matrix(matrix[number_points][4] )
+ */
 static PyObject* matrix2Dprob(PyObject* self, PyObject* args)
 {
     PyArrayObject *matin, *matout;
-    double **cin, **cout;   
+    double **cin, **cout;
     int n = 0;                      //If 0 at debug then something failed, else returns 1
     int f_in, c_in, f_out, c_out;
-
+    
     if (!PyArg_ParseTuple(args, "OO", &matin, &matout))
         return NULL;
-
+    
     cin=pymatrix_to_Carrayptrs(matin);
     cout=pymatrix_to_Carrayptrs(matout);
-
+    
     
     f_in=matin->dimensions[0];
     c_in=matin->dimensions[1];
-
+    
     f_out=matout->dimensions[0];
     c_out=matout->dimensions[1];
-
+    
     double random = 0;
     int random_pointer_x = 0;
     int random_pointer_y = 0;
-
+    
     double maxPSIValue = maxValue2D(matin);
-
+    
     for (int i=0; i<f_out; i++)  {
         random = randomInRange(0,maxPSIValue);
         random_pointer_x = (int) randomInRange(0,f_in);
@@ -184,7 +184,7 @@ static PyObject* matrix2Dprob(PyObject* self, PyObject* args)
         cout[i][2] = random;
         cout[i][3] = cin[random_pointer_x][random_pointer_y];
     }
-
+    
     n=1;
     return Py_BuildValue("i", n);
 }
@@ -192,38 +192,98 @@ static PyObject* matrix2Dprob(PyObject* self, PyObject* args)
 
 
 /* ==== Operate on Matrix components  =========================
-   Access to the introduced matrix data to calculate 3d points using MonteCarlo funciont with random numbers
-   matin now is a 3D array like this matin[x][y][z] with the psi values
-    Sets the values in the inserted matout NumPy array and gives 3d space points and the probability [4]
-    interface:  matrix3Dprob(matin, matout)
-                matin is the psi values NumPy matrix, matout is the output values matrix(matrix[number_points][4] )
-*/
+ Access to the introduced matrix data to calculate 3d points using MonteCarlo funciont with random numbers
+ matin now is a 3D array like this matin[x][y][z] with the psi values
+ Sets the values in the inserted matout NumPy array and gives 3d space points and the probability [4]
+ interface:  matrix3Dprob(matin, matout)
+ matin is the psi values NumPy matrix, matout is the output values matrix(matrix[number_points][4] )
+ */
 static PyObject* matrix3Dprob(PyObject* self, PyObject* args)
 {
     PyArrayObject *matin, *matout;
-    double **cout;   
+    double **cout;
     int n = 0;                      //If 0 at debug then something failed, else returns 1
     int f_in, c_in, e_in, f_out, c_out;
-
+    
     if (!PyArg_ParseTuple(args, "OO", &matin, &matout))
         return NULL;
-
+    
     cout=pymatrix_to_Carrayptrs(matout);
-
+    
     f_in=matin->dimensions[0];
     c_in=matin->dimensions[1];
     e_in=matin->dimensions[2];
-
+    
     f_out=matout->dimensions[0];
     c_out=matout->dimensions[1];
-
+    
     double random = 0;
     int rand_x = 0;
     int rand_y = 0;
     int rand_z = 0;
-
+    
     double maxPSIValue = maxValue3D(matin);
+    
+    for (int i=0; i<f_out; i++)  {
+        random = randomInRange(0, 1);
+        rand_x = (int) randomInRange(0,f_in);
+        rand_y = (int) randomInRange(0,c_in);
+        rand_z = (int) randomInRange(0,e_in);
+        while (random > *((double *)PyArray_GETPTR3(matin,rand_x,rand_y,rand_z)))
+        {
+            random = randomInRange(0, 1);
+            rand_x = (int) randomInRange(0,f_in);
+            rand_y = (int) randomInRange(0,c_in);
+            rand_z = (int) randomInRange(0,e_in);
+        }
+        cout[i][0] = rand_x - f_in/2 + randomInRange(0,1); //with this substraction operation values are better balanced
+        cout[i][1] = rand_y - c_in/2 + randomInRange(0,1); //because the final objective is show them in a 3D grid
+        cout[i][2] = rand_z - e_in/2 + randomInRange(0,1); //now this value is real too, because comes from 3D data
+        cout[i][3] = *((double *)PyArray_GETPTR3(matin,rand_x,rand_y,rand_z));
+        
+    }
+    
+    n=1;
+    return Py_BuildValue("i", n);
+}
 
+/* ==== Operate on Matrix components  =========================
+ Access to the introduced matrix data to calculate 3d points using MonteCarlo funciont with random numbers
+ matin now is a 3D array like this matin[x][y][z] with the psi values
+ Sets the values in the inserted matout NumPy array and gives 3d space points and the probability [4]
+ interface:  matrix3Dprob(matin, matout)
+ matin is the psi values NumPy matrix, matout is the output values matrix(matrix[number_points][4] )
+ */
+static PyObject* matrix3DprobRange(PyObject* self, PyObject* args)
+{
+    PyArrayObject *matin, *matout, *ranges;
+    double **cout;
+    double **v_range;               //matrix with the ranges to be used at the method
+    int n = 0;                      //If 0 at debug then something failed, else returns 1
+    int f_in, c_in, e_in, f_out, c_out;
+    
+    if (!PyArg_ParseTuple(args, "OOO", &matin, &matout, &ranges))
+        return NULL;
+    
+    cout=pymatrix_to_Carrayptrs(matout);
+    v_range=pymatrix_to_Carrayptrs(ranges);
+    
+    //EXAMPLE: v_range[0][0] == xmin, v_range[0][1] == ymax ,v_range[2][1] == zmax
+    
+    f_in=matin->dimensions[0];
+    c_in=matin->dimensions[1];
+    e_in=matin->dimensions[2];
+    
+    f_out=matout->dimensions[0];
+    c_out=matout->dimensions[1];
+    
+    double random = 0;
+    int rand_x = 0;
+    int rand_y = 0;
+    int rand_z = 0;
+    
+    double maxPSIValue = maxValue3D(matin);
+    
     for (int i=0; i<f_out; i++)  {
         random = randomInRange(0,maxPSIValue);
         rand_x = (int) randomInRange(0,f_in);
@@ -241,7 +301,7 @@ static PyObject* matrix3Dprob(PyObject* self, PyObject* args)
         cout[i][2] = rand_z - e_in/2 + randomInRange(0,1); //now this value is real too, because comes from 3D data
         cout[i][3] = *((double *)PyArray_GETPTR3(matin,rand_x,rand_y,rand_z));
     }
-
+    
     n=1;
     return Py_BuildValue("i", n);
 }
@@ -250,16 +310,16 @@ static PyObject* matrix3Dprob(PyObject* self, PyObject* args)
 static PyObject* randInRangeD(PyObject* self, PyObject* args)
 {
     double min, max, n;
-
+    
     if (!PyArg_ParseTuple(args, "dd", &min, &max))
         return NULL;
-
+    
     double scale = rand() / (double) RAND_MAX; /* [0, 1.0] */
     n = min + scale * ( max - min );      /* [min, max] */
-
+    
     return Py_BuildValue("d", n);
 }
- 
+
 double Cfib(double n)
 {
     if (n < 2)
@@ -267,33 +327,34 @@ double Cfib(double n)
     else
         return Cfib(n-1) + Cfib(n-2);
 }
- 
+
 static PyObject* fib(PyObject* self, PyObject* args)
 {
     double n;
-    double m; 
-
+    double m;
+    
     if (!PyArg_ParseTuple(args, "dd", &n, &m))
         return NULL;
-
+    
     return Py_BuildValue("d", Cfib(n*m));
 }
 
 static PyObject* version(PyObject* self)
 {
-    return Py_BuildValue("s", "Version 1.x4");
+    return Py_BuildValue("s", "Version 2.00");
 }
- 
+
 static PyMethodDef myMethods[] = {
     {"randInRangeD", randInRangeD, METH_VARARGS, "Returns a float number between two values randInRange(min, max) min included"},
     {"matrix2D", matrix2D, METH_VARARGS, "Calculates the MonteCarlo with the imput array and saves results in the other array (ArrayImput, ArrayOutput) ArrayOutput[any_size][3]"},
     {"matrix2Dprob", matrix2Dprob, METH_VARARGS, "Calculates the MonteCarlo with the imput array and saves results in the other array (ArrayImput, ArrayOutput) returns probability too ArrayOutput[any_size][4]"},
     {"matrix3Dprob", matrix3Dprob, METH_VARARGS, "Calculates the MonteCarlo with the imput array (3d) and saves results in the other array (ArrayImput, ArrayOutput) returns probability too ArrayOutput[any_size][4]"},
+    {"matrix3DprobRange", matrix3DprobRange, METH_VARARGS, "Calculates the MonteCarlo with the imput array etween a range and saves results in the other array"},
     {"fib", fib, METH_VARARGS, "Calculate the Fibonacci numbers."},
     {"version", (PyCFunction)version, METH_NOARGS, "Returns the version."},
     {NULL, NULL, 0, NULL}
 };
- 
+
 static struct PyModuleDef cArray = {
     PyModuleDef_HEAD_INIT,
     "cArray", //name of module.
