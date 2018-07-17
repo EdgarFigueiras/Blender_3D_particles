@@ -289,9 +289,10 @@ static PyObject* matrix3DprobRange(PyObject* self, PyObject* args)
     int rand_y = 0;
     int rand_z = 0;
     
-    //printf("Values: %d, %d, %d, %d, %d, %d\n", x_min, x_max, y_min, y_max, z_min, z_max);
+    printf("Dimensions: %d %d %d, Values: %d, %d, %d, %d, %d, %d\n", f_in, c_in, e_in, x_min, x_max, y_min, y_max, z_min, z_max);
     
     double maxPSIValue = maxValue3D(matin);
+    
     
     for (int i=0; i<f_out; i++)  {
         random = randomInRange(0,maxPSIValue);
@@ -299,18 +300,20 @@ static PyObject* matrix3DprobRange(PyObject* self, PyObject* args)
         rand_y = (int) randomInRange(y_min, y_max);
         rand_z = (int) randomInRange(z_min, z_max);
         
-        while (random > *((float *)PyArray_GETPTR3(matin,rand_x,rand_y,rand_z)))
+        while (random > *((double *)PyArray_GETPTR3(matin,rand_x,rand_y,rand_z)))
         {
             random = randomInRange(0,maxPSIValue);
             rand_x = (int) randomInRange(x_min, x_max);
             rand_y = (int) randomInRange(y_min, y_max);
             rand_z = (int) randomInRange(z_min, z_max);
+            printf("%d %d %d %d %f %f %f\n", i, rand_x, rand_y, rand_z, maxPSIValue, random,  *((double *)PyArray_GETPTR3(matin,rand_x,rand_y,rand_z)));
         }
         cout[i][0] = rand_x - f_in/2 + randomInRange(0,1); //with this substraction operation values are better balanced
         cout[i][1] = rand_y - c_in/2 + randomInRange(0,1); //because the final objective is show them in a 3D grid
         cout[i][2] = rand_z - e_in/2 + randomInRange(0,1); //now this value is real too, because comes from 3D data
-        cout[i][3] = *((float *)PyArray_GETPTR3(matin,rand_x,rand_y,rand_z));
+        cout[i][3] = *((double *)PyArray_GETPTR3(matin,rand_x,rand_y,rand_z));
     }
+    
     
     n=1;
     return Py_BuildValue("i", n);
@@ -351,7 +354,7 @@ static PyObject* fib(PyObject* self, PyObject* args)
 
 static PyObject* version(PyObject* self)
 {
-    return Py_BuildValue("s", "Version 2.00");
+    return Py_BuildValue("s", "Version 2.1");
 }
 
 static PyMethodDef myMethods[] = {
