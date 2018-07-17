@@ -1544,11 +1544,11 @@ class PanelDataSelection(bpy.types.Panel):
 
         box2.prop(scn.my_tool, "int_box_particles_size")
 
-        box2.operator("particle.calculator", text="Place Particles")
-
-        box2.label(text="Colour range", icon='GROUP_VCOL')
+        box2.label(text="Select the colour range", icon='GROUP_VCOL')
 
         box2.prop_search(context.scene, "ColorSchema", context.scene, "colorschema", text="")
+
+        box2.operator("particle.calculator", text="Place Particles")
 
         box2.operator("add.colors", text="Add Colors")
 
