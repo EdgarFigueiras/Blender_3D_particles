@@ -99,7 +99,7 @@ static PyObject* matrix2D(PyObject* self, PyObject* args)
     int f_in, c_in, f_out, c_out;
     
     if (!PyArg_ParseTuple(args, "OO", &matin, &matout))
-        return NULL;
+    return NULL;
     
     cin=pymatrix_to_Carrayptrs(matin);
     cout=pymatrix_to_Carrayptrs(matout);
@@ -151,7 +151,7 @@ static PyObject* matrix2Dprob(PyObject* self, PyObject* args)
     int f_in, c_in, f_out, c_out;
     
     if (!PyArg_ParseTuple(args, "OO", &matin, &matout))
-        return NULL;
+    return NULL;
     
     cin=pymatrix_to_Carrayptrs(matin);
     cout=pymatrix_to_Carrayptrs(matout);
@@ -206,7 +206,7 @@ static PyObject* matrix3Dprob(PyObject* self, PyObject* args)
     int f_in, c_in, e_in, f_out, c_out;
     
     if (!PyArg_ParseTuple(args, "OO", &matin, &matout))
-        return NULL;
+    return NULL;
     
     cout=pymatrix_to_Carrayptrs(matout);
     
@@ -261,14 +261,21 @@ static PyObject* matrix3DprobRange(PyObject* self, PyObject* args)
     double **v_range;               //matrix with the ranges to be used at the method
     int n = 0;                      //If 0 at debug then something failed, else returns 1
     int f_in, c_in, e_in, f_out, c_out;
+    int x_min, x_max, y_min, y_max, z_min, z_max;
     
     if (!PyArg_ParseTuple(args, "OOO", &matin, &matout, &ranges))
-        return NULL;
+    return NULL;
     
     cout=pymatrix_to_Carrayptrs(matout);
     v_range=pymatrix_to_Carrayptrs(ranges);
     
-    //EXAMPLE: v_range[0][0] == xmin, v_range[0][1] == ymax ,v_range[2][1] == zmax
+    //Range array values:
+    x_min = (int) v_range[0][0];
+    x_max = (int) v_range[0][1];
+    y_min = (int) v_range[1][0];
+    y_max = (int) v_range[1][1];
+    z_min = (int) v_range[2][0];
+    z_max = (int) v_range[2][1];
     
     f_in=matin->dimensions[0];
     c_in=matin->dimensions[1];
@@ -282,19 +289,22 @@ static PyObject* matrix3DprobRange(PyObject* self, PyObject* args)
     int rand_y = 0;
     int rand_z = 0;
     
+    printf("Values: %d, %d, %d, %d, %d, %d\n", x_min, x_max, y_min, y_max, z_min, z_max);
+    
     double maxPSIValue = maxValue3D(matin);
     
     for (int i=0; i<f_out; i++)  {
         random = randomInRange(0,maxPSIValue);
-        rand_x = (int) randomInRange(0,f_in);
-        rand_y = (int) randomInRange(0,c_in);
-        rand_z = (int) randomInRange(0,e_in);
+        rand_x = (int) randomInRange(x_min, x_max);
+        rand_y = (int) randomInRange(y_min, y_max);
+        rand_z = (int) randomInRange(z_min, z_max);
+        
         while (random > *((double *)PyArray_GETPTR3(matin,rand_x,rand_y,rand_z)))
         {
             random = randomInRange(0,maxPSIValue);
-            rand_x = (int) randomInRange(0,f_in);
-            rand_y = (int) randomInRange(0,c_in);
-            rand_z = (int) randomInRange(0,e_in);
+            rand_x = (int) randomInRange(x_min, x_max);
+            rand_y = (int) randomInRange(y_min, y_max);
+            rand_z = (int) randomInRange(z_min, z_max);
         }
         cout[i][0] = rand_x - f_in/2 + randomInRange(0,1); //with this substraction operation values are better balanced
         cout[i][1] = rand_y - c_in/2 + randomInRange(0,1); //because the final objective is show them in a 3D grid
@@ -312,7 +322,7 @@ static PyObject* randInRangeD(PyObject* self, PyObject* args)
     double min, max, n;
     
     if (!PyArg_ParseTuple(args, "dd", &min, &max))
-        return NULL;
+    return NULL;
     
     double scale = rand() / (double) RAND_MAX; /* [0, 1.0] */
     n = min + scale * ( max - min );      /* [min, max] */
@@ -323,9 +333,9 @@ static PyObject* randInRangeD(PyObject* self, PyObject* args)
 double Cfib(double n)
 {
     if (n < 2)
-        return n;
+    return n;
     else
-        return Cfib(n-1) + Cfib(n-2);
+    return Cfib(n-1) + Cfib(n-2);
 }
 
 static PyObject* fib(PyObject* self, PyObject* args)
@@ -334,7 +344,7 @@ static PyObject* fib(PyObject* self, PyObject* args)
     double m;
     
     if (!PyArg_ParseTuple(args, "dd", &n, &m))
-        return NULL;
+    return NULL;
     
     return Py_BuildValue("d", Cfib(n*m));
 }
