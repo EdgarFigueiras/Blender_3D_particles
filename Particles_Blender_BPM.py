@@ -117,6 +117,13 @@ class MySettings(PropertyGroup):
         default="",
         maxlen=1024,
         subtype='DIR_PATH')
+        
+    objects_path = StringProperty(
+        name="Store Path",
+        description="Path where files will be stored, by default uses the path of the simulation data",
+        default="",
+        maxlen=1024,
+        subtype='DIR_PATH')
 
     total_states_info = IntProperty(
         name="Min :0  Max ", 
@@ -1418,7 +1425,78 @@ class OBJECT_OT_Export_Parameters(bpy.types.Operator):
         f.write("   return V;" + "\r\n")
         f.close()
 
+        return{'FINISHED'}
+
+#Renders all objects one by one jumping between states
+class OBJECT_OT_SaveAllFiles(bpy.types.Operator):
+    bl_idname = "save_all.files"
+    bl_label = "SaveAllFiles"
+    country = bpy.props.StringProperty()
+
+
+    #This code 
+    def execute(self, context):
+    
+        bpy.ops.particle.forward()
+        bpy.ops.particle.backward()
+        
+        objs = bpy.data.objects
+        objs.remove(objs["Ico_9_extra"], True)
+
+        dir_image_path = bpy.data.scenes['Scene'].my_tool.objects_path
+
+        #Define an error message if occurs a problem during the run, is showed using a popup
+        def error_message(self, context):
+            self.layout.label("Unable to save the Files. Try again with other path")
+
+        #Calculate the total of states
+        try:
+            path = bpy.data.scenes['Scene'].my_tool.path #Origin from where the data will be readen, selected by the first option in the Panel
+            file_with_binary_data = open(path, 'rb+') #File with binary data
+
+            array_with_all_data = np.load(file_with_binary_data) #Gets the binary data as an array with 6 vectors (x_data, x_probability, y_data, y_probability, z_data, z_probability)
+       
+            #Matrix with the data of the 2D grid
+            array_3d = array_with_all_data['arr_0'] 
+
+            total_states = len(array_3d)
+
+            file_with_binary_data.close()
+
+        except:
+            bpy.context.window_manager.popup_menu(error_message, title="An error ocurred", icon='CANCEL')
+
+
+        for x in range(int(total_states)):
+
+            try:
+                #Sets the path where the files will be stored, by default the same as the datafile
+                if dir_image_path == "":
+                    bpy.ops.wm.save_as_mainfile(filepath="/Users/edgarfigueiras/Desktop/" + str(x) + ".blend")
+                    #Define a confirmation message to the default path            
+                    def confirm_message(self, context):
+                        self.layout.label("Render image saved at: " + bpy.data.scenes['Scene'].my_tool.path )
+
+                else:                
+                    bpy.ops.wm.save_as_mainfile(filepath = dir_image_path + str(x) + ".blend")
+                   
+                    #Define a confirmation message to the selected path 
+                    def confirm_message(self, context):
+                        self.layout.label("Rendered image saved at: " + dir_image_path )   
+
+                bpy.ops.render.render( write_still=True )
+
+                bpy.ops.particle.forward()
+                
+
+            except:
+                bpy.context.window_manager.popup_menu(error_message, title="An error ocurred", icon='CANCEL')
+
+
+        bpy.context.window_manager.popup_menu(confirm_message, title="Saved successful", icon='SCENE')
+
         return{'FINISHED'} 
+
 
 class OBJECT_PT_my_panel(Panel):
     bl_idname = "OBJECT_PT_my_panel"
@@ -1594,6 +1672,31 @@ class PanelStates(bpy.types.Panel):
         row.operator("particle.backward", text="Previous State", icon='BACK')
 
         row.operator("particle.forward", text="Next State", icon='FORWARD')
+
+
+class PanelSaveFiles(bpy.types.Panel):
+    """Panel para añadir al entorno 3D"""
+    bl_label = "Objects template saver"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'TOOLS'
+    COMPAT_ENGINES = {'BLENDER_RENDER'}
+
+    def draw(self, context):
+        layout = self.layout
+        scn = context.scene
+        col = layout.column(align=True)
+        box1 = layout.box()
+
+        box1.label(text="PARAMETERS")
+
+        box1.label(text="Select the path to save the files", icon='LIBRARY_DATA_DIRECT')
+
+        box1.prop(scn.my_tool, "objects_path", text="")
+
+        box1.label(text="Save all the files to be used as templates for generate models", icon='PARTICLE_DATA')
+
+        box1.operator("save_all.files", text="Save all files")
+
 
 class PanelTemplate(bpy.types.Panel):
     """Panel para añadir al entorno 3D"""
@@ -1913,7 +2016,7 @@ class ParticleCalculator(bpy.types.Operator):
         def ico_creation(materials_vector): 
             number_of_icos=10 #10 plus the extra
             #First Ico and Group creation
-            bpy.ops.mesh.primitive_ico_sphere_add(view_align=False, enter_editmode=False, location=(2, 2, -99), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+            bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1, view_align=False, enter_editmode=False, location=(2, 2, -99), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
             bpy.context.object.name = "Ico_0"
             bpy.ops.object.group_add()
             bpy.data.groups["Group"].name = "Ico"
@@ -1923,14 +2026,14 @@ class ParticleCalculator(bpy.types.Operator):
 
             #Icos iterative creation
             for cont in range(1, number_of_icos):
-                bpy.ops.mesh.primitive_ico_sphere_add(view_align=False, enter_editmode=False, location=(2, 2, -100 + (-1*cont)), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+                bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1, view_align=False, enter_editmode=False, location=(2, 2, -100 + (-1*cont)), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
                 bpy.context.object.name = "Ico_" + str(cont)
                 bpy.ops.object.group_link(group='Ico')
                 bpy.context.object.scale = (0.0001, 0.0001, 0.0001)
                 bpy.context.active_object.active_material=materials_vector[cont]
 
            #Extra Ico for ordenation purpouses 
-            bpy.ops.mesh.primitive_ico_sphere_add(view_align=False, enter_editmode=False, location=(2, 2, -111), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
+            bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1, view_align=False, enter_editmode=False, location=(2, 2, -111), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
             bpy.context.object.name = "Ico_9_extra"
             bpy.ops.object.group_link(group='Ico')
             bpy.context.object.scale = (0.0001, 0.0001, 0.0001)
