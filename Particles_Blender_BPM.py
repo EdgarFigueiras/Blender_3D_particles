@@ -1,5 +1,18 @@
+bl_info = {
+    "name": "Blender 3D Particles",
+    "author": "Edgar Figueiras",
+    "version": (4, 0),
+    "blender": (2, 78, 0),
+    "location": "Tools Panel -> Last tab",
+    "description": "Blender Add-on",
+    "warning": "",
+    "wiki_url": "",
+    "tracker_url": "",
+    "category": "Object"
+    }
+
+
 import bpy
-#import cArray
 import time
 import math
 import random
@@ -21,74 +34,13 @@ from bpy.types import (Panel,
                        PropertyGroup,
                        )
 
-# ------------------------------------------------------------------------
-#    Panel which allows the user to interact with the simulator
-# ------------------------------------------------------------------------
 
-#Clean the scene
-bpy.ops.object.select_by_type(type='MESH')
-bpy.ops.object.delete()
-
-image_format = (
-    ('BMP', 'BMP', ''),
-    ('IRIS', 'IRIS', ''),
-    ('PNG', 'PNG', ''),
-    ('JPEG', 'JPEG', ''),
-    ('JPEG2000', 'JPEG2000', ''),
-    ('TARGA', 'TARGA', ''),
-    ('TARGA_RAW', 'TARGA_RAW', ''), 
-    ('CINEON', 'CINEON', ''),
-    ('DPX', 'DPX', ''),
-    ('OPEN_EXR_MULTILAYER', 'OPEN_EXR_MULTILAYER', ''),
-    ('OPEN_EXR', 'OPEN_EXR', ''), 
-    ('HDR', 'HDR', ''),
-    ('TIFF', 'TIFF', '')
-)
-
-video_format = (
-    ('AVI_JPEG', 'AVI_JPEG', ''),
-    ('AVI_RAW', 'AVI_RAW', ''), 
-    ('FRAMESERVER', 'FRAMESERVER', ''), 
-    ('H264', 'H264', ''),
-    ('FFMPEG', 'FFMPEG', ''),
-    ('THEORA', 'THEORA', '')
-)
-
-calculation_format = (
-    ('2D', '2D', ''),
-    ('3D', '3D', '')
-)
-
-planes_number = (
-    ('1P', '1P', ''),
-    ('2P', '2P', '')
-)
-
-planes_project = (
-    ('X', 'X', ''),
-    ('Y', 'Y', ''),
-    ('XZ', 'XZ', ''),
-    ('Z', 'Z', '')
-)
-
-enum_items = (
-    ('FOO', 'Foo', ''),
-    ('BAR', 'Bar', '')
-)
-
-initial_objects = (
-    ('GaussBeam', 'GaussBeam', ''),
-    ('Vortex', 'Vortex', '')
-)
-
-color_schema = (
-    ('FullRange', 'FullRange', ''),
-    ('MediumRange', 'MediumRange', ''),
-    ('ColdRange', 'ColdRange', ''),
-    ('HotRange', 'HotRange', '')
-)
-
-class MySettings(PropertyGroup):
+class RenderProperties(Operator):
+    ''' An example operator for addon '''
+    bl_idname = "render.render_properties"
+    bl_label  = "Render Properties"
+    bl_options = {'REGISTER'}
+    prop = bpy.props.BoolProperty(options={'HIDDEN'})
 
     folder_path = StringProperty(
         name="Data Folder",
@@ -244,13 +196,303 @@ class MySettings(PropertyGroup):
         min = 1, max = 10000,
         default = 1000)
 
+    def execute(self, context):
+        obj = context.scene.objects.active
+        # Do the rendering here
+        return {"FINISHED"}
+
+    def draw(self, context):
+        layout = self.layout
+
+        if context.object is not None:
+            layout.prop(context.object, "name")
+ 
+
+#############################################################################################################################################
+#  ____                                  _             ____                           
+# |  _ \  _ __  ___   _ __    ___  _ __ | |_  _   _   / ___| _ __  ___   _   _  _ __  
+# | |_) || '__|/ _ \ | '_ \  / _ \| '__|| __|| | | | | |  _ | '__|/ _ \ | | | || '_ \ 
+# |  __/ | |  | (_) || |_) ||  __/| |   | |_ | |_| | | |_| || |  | (_) || |_| || |_) |
+# |_|    |_|   \___/ | .__/  \___||_|    \__| \__, |  \____||_|   \___/  \__,_|| .__/ 
+#                    |_|                      |___/                            |_|   
+############################################################################################################################################
 
 
-#*************************************************************************# 
-# ----------------------------------------------------------------------- #
-#    Panel class                                                          #
-# ----------------------------------------------------------------------- #
-#*************************************************************************# 
+
+class RenderPropertySettings(PropertyGroup): 
+    
+    folder_path = StringProperty(
+        name="Data Folder",
+        description="Folder with the simulation data.",
+        default="",
+        maxlen=1024,
+        subtype='FILE_PATH')
+
+    folder_path_export = StringProperty(
+        name="Data Folder export initial conditions",
+        description="Folder where initial conditions will be exported.",
+        default="",
+        maxlen=1024,
+        subtype='FILE_PATH')
+
+    path = StringProperty(
+        name="Data File",
+        description="File with the simulation data.",
+        default="",
+        maxlen=1024,
+        subtype='FILE_PATH')
+
+    image_path = StringProperty(
+        name="Store Path",
+        description="Path where renders will be stored, by default uses the path of the simulation data",
+        default="",
+        maxlen=1024,
+        subtype='DIR_PATH')
+        
+    objects_path = StringProperty(
+        name="Store Path",
+        description="Path where files will be stored, by default uses the path of the simulation data",
+        default="",
+        maxlen=1024,
+        subtype='DIR_PATH')
+
+    total_states_info = IntProperty(
+        name="Min :0  Max ", 
+        description="Total number of states of the simulation",
+        min = 0, max = 1000000,
+        default = 0)
+
+    int_box_particulas_Simulacion = IntProperty(
+        name="Simulation particles", 
+        description="Total number of particles for generating the matrix",
+        min = 1000, max = 10000000,
+        default = 100000)
+
+    int_box_n_particulas = IntProperty(
+        name="Particles to show ", 
+        description="Total number of particles of the simulation",
+        min = 1000, max = 10000000,
+        default = 10000)
+
+    int_box_granularity = IntProperty(
+        name="Granularity ", 
+        description="Modifies the granularity. Min = 1 , Max = 10",
+        min = 1, max = 10,
+        default = 5)
+
+    int_box_saturation = IntProperty(
+        name="Saturation ", 
+        description="Modify the saturation. Min = 1, Max = 10",
+        min = 1, max = 10,
+        default = 5)
+
+    int_box_state = IntProperty(
+        name="State ", 
+        description="Modify the State",
+        min = 0, max = 9999,
+        default = 0)
+
+    int_box_offset = IntProperty(
+        name="Offset ", 
+        description="Modify the offset to show the projection",
+        min = -1000, max = 1000,
+        default = 50)
+
+    bool_cut_box = BoolProperty(
+        name="Cut box side",
+        description="Enables the oposite cut plane view",
+        default = True)  
+
+    int_x_size = IntProperty(
+        name="X Max Size", 
+        description="X-window size",
+        min = 0, max = 1000,
+        default = 100)  
+
+    int_y_size = IntProperty(
+        name="Y Max Size", 
+        description="Y-window size",
+        min = 0, max = 1000,
+        default = 100)   
+
+    int_absorb_coeff = IntProperty(
+        name="Absorb Coefficient", 
+        description="Absorb Coefficient",
+        min = 0, max = 100,
+        default = 10) 
+
+    x_ob_pos = IntProperty(
+        name="X initial object position", 
+        description="X initial object position",
+        min = -1000, max = 1000,
+        default = 0) 
+    
+    y_ob_pos = IntProperty(
+        name="Y initial object position", 
+        description="Y initial object position",
+        min = -1000, max = 1000,
+        default = 0) 
+    
+    z_ob_pos = IntProperty(
+        name="Z initial object position", 
+        description="Z initial object position",
+        min = -1000, max = 1000,
+        default = 0)
+
+    zR_ob = IntProperty(
+        name="Rayleigh range", 
+        description="Rayleigh range object property value",
+        min = -1000, max = 1000,
+        default = 0) 
+
+    zini_ob = IntProperty(
+        name="zini value", 
+        description="zini object property value",
+        min = -100, max = 100,
+        default = -5) 
+
+    quini_ob = IntProperty(
+        name="quini value", 
+        description="quini object property value",
+        min = 0, max = 100,
+        default = 10) 
+
+    int_box_frames = IntProperty(
+        name="Frames per step", 
+        description="Frames captured for each time step",
+        min = 1, max = 10000000,
+        default = 1)
+
+    int_box_total_frames = IntProperty(
+        name="Total frames", 
+        description="Total of frames that will be rendered",
+        min = 1, max = 1000000000,
+        default = 1)
+
+    int_box_particles_size = IntProperty(
+        name="Particles size", 
+        description="Value to scale the particles size",
+        min = 1, max = 10000,
+        default = 1000)
+
+
+    image_format = EnumProperty(
+        name="image_format",
+        description="Select the type of cloud to create with material settings",
+        items=[('BMP', 'BMP', ''),
+                ('IRIS', 'IRIS', ''),
+                ('PNG', 'PNG', ''),
+                ('JPEG', 'JPEG', ''),
+                ('JPEG2000', 'JPEG2000', ''),
+                ('TARGA', 'TARGA', ''),
+                ('TARGA_RAW', 'TARGA_RAW', ''), 
+                ('CINEON', 'CINEON', ''),
+                ('DPX', 'DPX', ''),
+                ('OPEN_EXR_MULTILAYER', 'OPEN_EXR_MULTILAYER', ''),
+                ('OPEN_EXR', 'OPEN_EXR', ''), 
+                ('HDR', 'HDR', ''),
+                ('TIFF', 'TIFF', ''),
+              ],
+        default='PNG') 
+
+    
+    video_format = EnumProperty(
+        name="video_format",
+        description="Select the type of cloud to create with material settings",
+        items=[
+                ('AVI_JPEG', 'AVI_JPEG', ''),
+                ('AVI_RAW', 'AVI_RAW', ''), 
+                ('FRAMESERVER', 'FRAMESERVER', ''), 
+                ('H264', 'H264', ''),
+                ('FFMPEG', 'FFMPEG', ''),
+                ('THEORA', 'THEORA', ''),
+              ],
+        default='AVI_JPEG') 
+
+
+    calculation_format = EnumProperty(
+        name="calculation_format",
+        description="Select the type of cloud to create with material settings",
+        items=[
+                ('2D', '2D', ''),
+                ('3D', '3D', ''),
+              ],
+        default='2D') 
+
+
+    planes_number = EnumProperty(
+        name="planes_number",
+        description="Select the type of cloud to create with material settings",
+        items=[
+                ('1P', '1P', ''),
+                ('2P', '2P', ''),
+              ],
+        default='1P') 
+
+
+    planes_project = EnumProperty(
+        name="planes_project",
+        description="Select the type of cloud to create with material settings",
+        items=[
+                ('X', 'X', ''),
+                ('Y', 'Y', ''),
+                ('XZ', 'XZ', ''),
+                ('Z', 'Z', ''),
+              ],
+        default='X') 
+
+
+    enum_items = EnumProperty(
+        name="enum_items",
+        description="Select the type of cloud to create with material settings",
+        items=[
+                ('FOO', 'Foo', ''),
+                ('BAR', 'Bar', ''),
+              ],
+        default='FOO') 
+
+    
+    initial_objects = EnumProperty(
+        name="initial_objects",
+        description="Select the type of cloud to create with material settings",
+        items=[
+                ('GaussBeam', 'GaussBeam', ''),
+                ('Vortex', 'Vortex', ''),
+              ],
+        default='GaussBeam') 
+
+
+    color_schema = EnumProperty(
+        name="color_schema",
+        description="Select the type of cloud to create with material settings",
+        items=[
+                ('FullRange', 'FullRange', ''),
+                ('MediumRange', 'MediumRange', ''),
+                ('ColdRange', 'ColdRange', ''),
+                ('HotRange', 'HotRange', ''),
+              ],
+        default='FullRange') 
+
+
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+
+#     ______   __         ______    ______    ______   ________   ______     
+#    /      \ |  \       /      \  /      \  /      \ |        \ /      \ 
+#   |  $$$$$$\| $$      |  $$$$$$\|  $$$$$$\|  $$$$$$\| $$$$$$$$|  $$$$$$\
+#   | $$   \$$| $$      | $$__| $$| $$___\$$| $$___\$$| $$__    | $$___\$$
+#   | $$      | $$      | $$    $$ \$$    \  \$$    \ | $$  \    \$$    \ 
+#   | $$   __ | $$      | $$$$$$$$ _\$$$$$$\ _\$$$$$$\| $$$$$    _\$$$$$$\
+#   | $$__/  \| $$_____ | $$  | $$|  \__| $$|  \__| $$| $$_____ |  \__| $$
+#   \$$    $$| $$     \| $$  | $$ \$$    $$ \$$    $$| $$     \ \$$    $$
+#     \$$$$$$  \$$$$$$$$ \$$   \$$  \$$$$$$   \$$$$$$  \$$$$$$$$  \$$$$$$ 
+
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
 
 class OBJECT_OT_AddColors(bpy.types.Operator):
     bl_idname = "add.colors"
@@ -268,7 +510,7 @@ class OBJECT_OT_AddColors(bpy.types.Operator):
             self.layout.label("Error opening the original array data")
 
         try:
-            path = bpy.data.scenes['Scene'].my_tool.path #Origin from where the data will be readen, selected by the first option in the Panel
+            path = bpy.context.scene.iso_render.path #Origin from where the data will be readen, selected by the first option in the Panel
        
             file_with_binary_data = open(path, 'rb+') #File with binary data
 
@@ -280,7 +522,7 @@ class OBJECT_OT_AddColors(bpy.types.Operator):
         except:
             bpy.context.window_manager.popup_menu(error_message, title="An error ocurred", icon='CANCEL')
 
-        particles_number = bpy.data.scenes['Scene'].my_tool.int_box_n_particulas
+        particles_number = bpy.context.scene.iso_render.int_box_n_particulas
 
         #Use an auxiliar array to work with a variable number of points, 
         #allowing the user to make diferent points simulation with good results
@@ -355,7 +597,7 @@ class OBJECT_OT_ResetButton(bpy.types.Operator):
         bpy.ops.object.delete()
         bpy.context.scene.frame_current = 0
 
-        bpy.data.scenes["Scene"].my_tool.int_box_state = -1
+        bpy.context.scene.iso_render.int_box_state = -1
         bpy.context.window_manager.popup_menu(confirm_message, title="Reset", icon='VIEW3D_VEC')
 
         return{'FINISHED'} 
@@ -371,7 +613,7 @@ class OBJECT_OT_RenderButton(bpy.types.Operator):
     #This code 
     def execute(self, context):
 
-        dir_image_path = bpy.data.scenes['Scene'].my_tool.image_path
+        dir_image_path = bpy.context.scene.iso_render.image_path
 
         #Define an error message if occurs a problem during the run, is showed using a popup
         def error_message(self, context):
@@ -389,11 +631,11 @@ class OBJECT_OT_RenderButton(bpy.types.Operator):
 
             #Sets the path where the file will be stored, by default the same as the datafile
             if dir_image_path == "":
-                bpy.data.scenes['Scene'].render.filepath = bpy.data.scenes['Scene'].my_tool.path + time.strftime("%c%s") + '.jpg'
+                bpy.data.scenes['Scene'].render.filepath = bpy.context.scene.iso_render.path + time.strftime("%c%s") + '.jpg'
                 
                 #Define a confirmation message to the default path            
                 def confirm_message(self, context):
-                    self.layout.label("Render image saved at: " + bpy.data.scenes['Scene'].my_tool.path )
+                    self.layout.label("Render image saved at: " + bpy.context.scene.iso_render.path )
 
             else:                
                 bpy.data.scenes['Scene'].render.filepath = dir_image_path + time.strftime("%c%s") + '.jpg'
@@ -423,7 +665,7 @@ class OBJECT_OT_RenderAllButton(bpy.types.Operator):
     #This code 
     def execute(self, context):
 
-        dir_image_path = bpy.data.scenes['Scene'].my_tool.image_path
+        dir_image_path = bpy.context.scene.iso_render.image_path
 
         #Define an error message if occurs a problem during the run, is showed using a popup
         def error_message(self, context):
@@ -432,7 +674,7 @@ class OBJECT_OT_RenderAllButton(bpy.types.Operator):
         #Calculate the total of states
         #Calculate the total of states
         try:
-            path = bpy.data.scenes['Scene'].my_tool.path #Origin from where the data will be readen, selected by the first option in the Panel
+            path = bpy.context.scene.iso_render.path #Origin from where the data will be readen, selected by the first option in the Panel
             file_with_binary_data = open(path, 'rb+') #File with binary data
 
             array_with_all_data = np.load(file_with_binary_data) #Gets the binary data as an array with 6 vectors (x_data, x_probability, y_data, y_probability, z_data, z_probability)
@@ -461,11 +703,11 @@ class OBJECT_OT_RenderAllButton(bpy.types.Operator):
 
                 #Sets the path where the file will be stored, by default the same as the datafile
                 if dir_image_path == "":
-                    bpy.data.scenes['Scene'].render.filepath = bpy.data.scenes['Scene'].my_tool.path + str(x) + '.jpg'
+                    bpy.data.scenes['Scene'].render.filepath = bpy.context.scene.iso_render.path + str(x) + '.jpg'
                     
                     #Define a confirmation message to the default path            
                     def confirm_message(self, context):
-                        self.layout.label("Render image saved at: " + bpy.data.scenes['Scene'].my_tool.path )
+                        self.layout.label("Render image saved at: " + bpy.context.scene.iso_render.path )
 
                 else:                
                     bpy.data.scenes['Scene'].render.filepath = dir_image_path + str(x) + '.jpg'
@@ -497,7 +739,7 @@ class OBJECT_OT_RenderAllProjButton(bpy.types.Operator):
     #This code 
     def execute(self, context):
 
-        dir_image_path = bpy.data.scenes['Scene'].my_tool.image_path
+        dir_image_path = bpy.context.scene.iso_render.image_path
 
         #Define an error message if occurs a problem during the run, is showed using a popup
         def error_message(self, context):
@@ -506,7 +748,7 @@ class OBJECT_OT_RenderAllProjButton(bpy.types.Operator):
         #Calculate the total of states
         #Calculate the total of states
         try:
-            path = bpy.data.scenes['Scene'].my_tool.path #Origin from where the data will be readen, selected by the first option in the Panel
+            path = bpy.context.scene.iso_render.path #Origin from where the data will be readen, selected by the first option in the Panel
             file_with_binary_data = open(path, 'rb+') #File with binary data
 
             array_with_all_data = np.load(file_with_binary_data) #Gets the binary data as an array with 6 vectors (x_data, x_probability, y_data, y_probability, z_data, z_probability)
@@ -535,11 +777,11 @@ class OBJECT_OT_RenderAllProjButton(bpy.types.Operator):
 
                 #Sets the path where the file will be stored, by default the same as the datafile
                 if dir_image_path == "":
-                    bpy.data.scenes['Scene'].render.filepath = bpy.data.scenes['Scene'].my_tool.path + str(x) + '.jpg'
+                    bpy.data.scenes['Scene'].render.filepath = bpy.context.scene.iso_render.path + str(x) + '.jpg'
                     
                     #Define a confirmation message to the default path            
                     def confirm_message(self, context):
-                        self.layout.label("Render image saved at: " + bpy.data.scenes['Scene'].my_tool.path )
+                        self.layout.label("Render image saved at: " + bpy.context.scene.iso_render.path )
 
                 else:                
                     bpy.data.scenes['Scene'].render.filepath = dir_image_path + str(x) + '.jpg'
@@ -549,7 +791,7 @@ class OBJECT_OT_RenderAllProjButton(bpy.types.Operator):
                         self.layout.label("Rendered image saved at: " + dir_image_path )   
 
                 #Projections in X and Z axis using default values
-                #bpy.context.scene.PlanesProject = "XZ"
+                #bpy.context.scene.iso_render.planes_project = "XZ"
                 bpy.ops.place.planeproject()
                 bpy.ops.particle.projection()
                 bpy.ops.delete.planeproject()
@@ -577,7 +819,7 @@ class OBJECT_OT_RenderAllCutButton(bpy.types.Operator):
     #This code 
     def execute(self, context):
 
-        dir_image_path = bpy.data.scenes['Scene'].my_tool.image_path
+        dir_image_path = bpy.context.scene.iso_render.image_path
 
         #Define an error message if occurs a problem during the run, is showed using a popup
         def error_message(self, context):
@@ -586,7 +828,7 @@ class OBJECT_OT_RenderAllCutButton(bpy.types.Operator):
         #Calculate the total of states
         #Calculate the total of states
         try:
-            path = bpy.data.scenes['Scene'].my_tool.path #Origin from where the data will be readen, selected by the first option in the Panel
+            path = bpy.context.scene.iso_render.path #Origin from where the data will be readen, selected by the first option in the Panel
             file_with_binary_data = open(path, 'rb+') #File with binary data
 
             array_with_all_data = np.load(file_with_binary_data) #Gets the binary data as an array with 6 vectors (x_data, x_probability, y_data, y_probability, z_data, z_probability)
@@ -615,11 +857,11 @@ class OBJECT_OT_RenderAllCutButton(bpy.types.Operator):
 
                 #Sets the path where the file will be stored, by default the same as the datafile
                 if dir_image_path == "":
-                    bpy.data.scenes['Scene'].render.filepath = bpy.data.scenes['Scene'].my_tool.path + str(x) + '.jpg'
+                    bpy.data.scenes['Scene'].render.filepath = bpy.context.scene.iso_render.path + str(x) + '.jpg'
                     
                     #Define a confirmation message to the default path            
                     def confirm_message(self, context):
-                        self.layout.label("Render image saved at: " + bpy.data.scenes['Scene'].my_tool.path )
+                        self.layout.label("Render image saved at: " + bpy.context.scene.iso_render.path )
 
                 else:                
                     bpy.data.scenes['Scene'].render.filepath = dir_image_path + str(x) + '.jpg'
@@ -629,7 +871,7 @@ class OBJECT_OT_RenderAllCutButton(bpy.types.Operator):
                         self.layout.label("Rendered image saved at: " + dir_image_path )   
 
                 #Cut using 2 planes with default values
-                bpy.context.scene.PlanesNumber = "2P"
+                bpy.context.scene.iso_render.planes_number = "2P"
                 bpy.ops.place.plane()
                 bpy.ops.particle.cut()
                 bpy.ops.delete.plane()
@@ -659,15 +901,15 @@ class OBJECT_OT_RenderAllFrame(bpy.types.Operator):
     #This code 
     def execute(self, context):
 
-        dir_image_path = bpy.data.scenes['Scene'].my_tool.image_path
+        dir_image_path = bpy.context.scene.iso_render.image_path
 
         #Define an error message if occurs a problem during the run, is showed using a popup
         def error_message(self, context):
             self.layout.label("Unable to save the Renders. Try again with other path")
 
         try:
-            frames_to_change = bpy.context.scene.my_tool.int_box_frames 
-            total_frames = bpy.context.scene.my_tool.int_box_total_frames 
+            frames_to_change = bpy.context.scene.iso_render.int_box_frames 
+            total_frames = bpy.context.scene.iso_render.int_box_total_frames 
 
         except:
             bpy.context.window_manager.popup_menu(error_message, title="An error ocurred", icon='CANCEL')
@@ -686,11 +928,11 @@ class OBJECT_OT_RenderAllFrame(bpy.types.Operator):
 
                 #Sets the path where the file will be stored, by default the same as the datafile
                 if dir_image_path == "":
-                    bpy.data.scenes['Scene'].render.filepath = bpy.data.scenes['Scene'].my_tool.path + str(x) + '.jpg'
+                    bpy.data.scenes['Scene'].render.filepath = bpy.context.scene.iso_render.path + str(x) + '.jpg'
                     
                     #Define a confirmation message to the default path            
                     def confirm_message(self, context):
-                        self.layout.label("Render image saved at: " + bpy.data.scenes['Scene'].my_tool.path )
+                        self.layout.label("Render image saved at: " + bpy.context.scene.iso_render.path )
 
                 else:                
                     bpy.data.scenes['Scene'].render.filepath = dir_image_path + str(x) + '.jpg'
@@ -700,7 +942,7 @@ class OBJECT_OT_RenderAllFrame(bpy.types.Operator):
                         self.layout.label("Rendered image saved at: " + dir_image_path )   
 
                 #Cut using 2 planes with default values
-                #bpy.context.scene.PlanesNumber = "2P"
+                #bpy.context.scene.iso_render.planes_number = "2P"
                 #bpy.ops.place.plane()
                 #bpy.ops.particle.cut()
                 #bpy.ops.delete.plane()
@@ -711,7 +953,7 @@ class OBJECT_OT_RenderAllFrame(bpy.types.Operator):
 
                 if (frames_to_change == 0):
                     bpy.ops.particle.forward()
-                    frames_to_change = bpy.context.scene.my_tool.int_box_frames
+                    frames_to_change = bpy.context.scene.iso_render.int_box_frames
 
                 else:
                     bpy.context.scene.frame_current += 1
@@ -737,7 +979,7 @@ class OBJECT_OT_RenderVideoButton(bpy.types.Operator):
     #This code 
     def execute(self, context):
 
-        dir_image_path = bpy.data.scenes['Scene'].my_tool.image_path
+        dir_image_path = bpy.context.scene.iso_render.image_path
 
         #Define an error message if occurs a problem during the run, is showed using a popup
         def error_message(self, context):
@@ -755,11 +997,11 @@ class OBJECT_OT_RenderVideoButton(bpy.types.Operator):
 
             #Sets the path where the file will be stored, by default the same as the datafile
             if dir_image_path == "":
-                bpy.data.scenes['Scene'].render.filepath = bpy.data.scenes['Scene'].my_tool.path + time.strftime("%c%s") + '.avi'
+                bpy.data.scenes['Scene'].render.filepath = bpy.context.scene.iso_render.path + time.strftime("%c%s") + '.avi'
                 
                 #Define a confirmation message to the default path            
                 def confirm_message(self, context):
-                    self.layout.label("Rendered video saved at: " + bpy.data.scenes['Scene'].my_tool.path )
+                    self.layout.label("Rendered video saved at: " + bpy.context.scene.iso_render.path )
 
             else:                
                 bpy.data.scenes['Scene'].render.filepath = dir_image_path + time.strftime("%c%s") + '.avi'
@@ -822,7 +1064,7 @@ class OBJECT_OT_PlanePlacement(bpy.types.Operator):
         bpy.context.object.name = "Cut_plane"
         bpy.data.objects[cut_plane_name].rotation_euler=(0,1.5708,0)
 
-        if (bpy.context.scene.PlanesNumber =="2P"):
+        if (bpy.context.scene.iso_render.planes_number =="2P"):
             bpy.ops.mesh.primitive_plane_add(radius=5, view_align=False, enter_editmode=False, location=(5, 0, 1), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
             cut_plane_name = "Cut_plane2"
             bpy.context.object.name = "Cut_plane2"
@@ -839,11 +1081,11 @@ class OBJECT_OT_PlaneDelete(bpy.types.Operator):
 
         bpy.context.object.select = 0
 
-        if (bpy.context.scene.PlanesNumber =="1P"):
+        if (bpy.context.scene.iso_render.planes_number =="1P"):
             bpy.data.objects["Cut_plane"].select = True
             bpy.ops.object.delete() 
 
-        if (bpy.context.scene.PlanesNumber =="2P"):
+        if (bpy.context.scene.iso_render.planes_number =="2P"):
             bpy.data.objects["Cut_plane"].select = True
             bpy.ops.object.delete() 
             bpy.data.objects["Cut_plane2"].select = True
@@ -869,7 +1111,7 @@ class OBJECT_OT_PlanePlacementProject(bpy.types.Operator):
             bpy.context.object.name='Sphere_projections'
             bpy.data.objects['Sphere_projections'].select = True
             bpy.context.scene.objects.active = bpy.data.objects['Sphere_projections'] 
-            if(bpy.context.scene.PlanesProject == "XZ"):
+            if(bpy.context.scene.iso_render.planes_project == "XZ"):
                 bpy.data.objects['Sphere_projections_2'].select = True
                 bpy.context.scene.objects.active = bpy.data.objects['Sphere_projections_2'] 
                 bpy.ops.object.delete()
@@ -886,7 +1128,7 @@ class OBJECT_OT_PlanePlacementProject(bpy.types.Operator):
             bpy.context.object.name='Sphere_projections'
             bpy.data.objects['Sphere_projections'].select = True
             bpy.context.scene.objects.active = bpy.data.objects['Sphere_projections']
-            if(bpy.context.scene.PlanesProject == "XZ"): 
+            if(bpy.context.scene.iso_render.planes_project == "XZ"): 
                 bpy.data.objects['Sphere_projections'].select = True
                 bpy.context.scene.objects.active = bpy.data.objects['Sphere_projections'] 
                 bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'}, TRANSFORM_OT_translate={"value":(297.861, -706.12, -1793.05), "constraint_axis":(False, False, False), "constraint_orientation":'GLOBAL', "mirror":False, "proportional":'DISABLED', "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False})
@@ -899,13 +1141,13 @@ class OBJECT_OT_PlanePlacementProject(bpy.types.Operator):
         bpy.ops.mesh.primitive_plane_add(radius=15, view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
         proj_plane_name1 = "Project_plane"
         bpy.context.object.name = "Project_plane"
-        if(bpy.context.scene.PlanesProject == "X"):
+        if(bpy.context.scene.iso_render.planes_project == "X"):
             bpy.data.objects[proj_plane_name1].rotation_euler=(0,1.5708,0)
-        if(bpy.context.scene.PlanesProject == "Y"):
+        if(bpy.context.scene.iso_render.planes_project == "Y"):
             bpy.data.objects[proj_plane_name1].rotation_euler=(1.5708,0,0)
-        if(bpy.context.scene.PlanesProject == "Z"):
+        if(bpy.context.scene.iso_render.planes_project == "Z"):
             bpy.data.objects[proj_plane_name1].rotation_euler=(0,0,0)
-        if(bpy.context.scene.PlanesProject == "XZ"):
+        if(bpy.context.scene.iso_render.planes_project == "XZ"):
             bpy.ops.mesh.primitive_plane_add(radius=15, view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
             proj_plane_name2 = "Project_plane_2"
             bpy.context.object.name = "Project_plane_2"
@@ -961,13 +1203,13 @@ class OBJECT_OT_Template_2(bpy.types.Operator):
     def execute(self, context):
 
         #Cut using 2 planes with default values
-        bpy.context.scene.PlanesNumber = "2P"
+        bpy.context.scene.iso_render.planes_number = "2P"
         bpy.ops.place.plane()
         bpy.ops.particle.cut()
         bpy.ops.delete.plane()
 
         #Projections in X and Z axis using default values
-        bpy.context.scene.PlanesProject = "XZ"
+        bpy.context.scene.iso_render.planes_project = "XZ"
         bpy.ops.place.planeproject()
         bpy.ops.particle.projection()
         bpy.ops.delete.planeproject()
@@ -1181,10 +1423,10 @@ class OBJECT_OT_Initial_Object(bpy.types.Operator):
         #Absorb coeff is stored in the alpha color value of the material
         bpy.ops.mesh.primitive_cube_add(radius=1, view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
         bpy.context.object.name = 'Origin_Cube'
-        x_size= bpy.context.scene.my_tool.int_x_size / 10
-        real_x_size = bpy.context.scene.my_tool.int_x_size
-        y_size= bpy.context.scene.my_tool.int_y_size / 10
-        real_y_size = bpy.context.scene.my_tool.int_y_size
+        x_size= bpy.context.scene.iso_render.int_x_size / 10
+        real_x_size = bpy.context.scene.iso_render.int_x_size
+        y_size= bpy.context.scene.iso_render.int_y_size / 10
+        real_y_size = bpy.context.scene.iso_render.int_y_size
         bpy.data.objects['Origin_Cube'].scale[0] = x_size
         bpy.data.objects['Origin_Cube'].scale[1] = y_size
         #Z axis size equal to (x+y)/2
@@ -1216,7 +1458,7 @@ class OBJECT_OT_Initial_Object(bpy.types.Operator):
         bpy.context.object.rotation_euler[0] = 0.523599
         bpy.ops.object.editmode_toggle()
         bpy.ops.font.delete()
-        bpy.ops.font.text_insert(text=" Abs coeff: " + str(bpy.context.scene.my_tool.int_absorb_coeff))
+        bpy.ops.font.text_insert(text=" Abs coeff: " + str(bpy.context.scene.iso_render.int_absorb_coeff))
         bpy.ops.object.editmode_toggle()
 
         bpy.ops.object.text_add(radius=text_scale, view_align=False, enter_editmode=False, location=(-1*(x_size + text_scale), y_size, -1*(z_size+0.5)), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
@@ -1296,12 +1538,12 @@ class OBJECT_OT_Initial_Object2(bpy.types.Operator):
 
 
 
-        if (bpy.context.scene.InitialObjects == "GaussBeam"):
+        if (bpy.context.scene.iso_render.initial_objects == "GaussBeam"):
             #Gaussian 
 
-            x_gauss_pos = bpy.context.scene.my_tool.x_ob_pos / 10
-            y_gauss_pos = bpy.context.scene.my_tool.y_ob_pos / 10
-            z_gauss_pos = bpy.context.scene.my_tool.z_ob_pos / 10
+            x_gauss_pos = bpy.context.scene.iso_render.x_ob_pos / 10
+            y_gauss_pos = bpy.context.scene.iso_render.y_ob_pos / 10
+            z_gauss_pos = bpy.context.scene.iso_render.z_ob_pos / 10
             gauss_size = 2
             bpy.ops.mesh.primitive_uv_sphere_add(size=gauss_size, view_align=False, enter_editmode=False, location=(x_gauss_pos, y_gauss_pos, z_gauss_pos), layers=(False, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
             bpy.context.object.name = 'Gauss_Sphere'
@@ -1319,8 +1561,8 @@ class OBJECT_OT_Initial_Object2(bpy.types.Operator):
             bpy.context.object.rotation_euler[0] = 0.523599
             bpy.ops.object.editmode_toggle()
             bpy.ops.font.delete()
-            zR=bpy.context.scene.my_tool.zR_ob 
-            zini=bpy.context.scene.my_tool.zini_ob
+            zR=bpy.context.scene.iso_render.zR_ob 
+            zini=bpy.context.scene.iso_render.zini_ob
             bpy.ops.font.text_insert(text=" G, zR:" + str(zR) + ",zini:" + str(zini))
             bpy.ops.object.editmode_toggle()
 
@@ -1334,11 +1576,11 @@ class OBJECT_OT_Initial_Object2(bpy.types.Operator):
             text_mat.alpha = density_mat_absorb_coeff
             bpy.data.objects['Gauss_text'].data.materials.append(text_mat)
 
-        if (bpy.context.scene.InitialObjects == "Vortex"):
+        if (bpy.context.scene.iso_render.initial_objects == "Vortex"):
             #Vortex
-            x_vortex_pos = bpy.context.scene.my_tool.x_ob_pos / 10
-            y_vortex_pos = bpy.context.scene.my_tool.y_ob_pos / 10
-            z_vortex_pos = bpy.context.scene.my_tool.z_ob_pos / 10
+            x_vortex_pos = bpy.context.scene.iso_render.x_ob_pos / 10
+            y_vortex_pos = bpy.context.scene.iso_render.y_ob_pos / 10
+            z_vortex_pos = bpy.context.scene.iso_render.z_ob_pos / 10
             vortex_size = 2
             bpy.ops.mesh.primitive_torus_add(rotation=(0, 0, 0), view_align=False, location=(x_vortex_pos, y_vortex_pos, z_vortex_pos), minor_segments=22, mode='MAJOR_MINOR', major_radius=0.88, minor_radius=0.70, abso_major_rad=1.25, abso_minor_rad=0.75, layers=(False, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
             bpy.context.object.scale[2] = 1.92
@@ -1358,8 +1600,8 @@ class OBJECT_OT_Initial_Object2(bpy.types.Operator):
             bpy.context.object.rotation_euler[0] = 0.523599
             bpy.ops.object.editmode_toggle()
             bpy.ops.font.delete()
-            zR=bpy.context.scene.my_tool.zR_ob 
-            zini=bpy.context.scene.my_tool.zini_ob
+            zR=bpy.context.scene.iso_render.zR_ob 
+            zini=bpy.context.scene.iso_render.zini_ob
             bpy.ops.font.text_insert(text=" G, zR:" + str(zR) + ",zini:" + str(zini))
             bpy.ops.object.editmode_toggle()
 
@@ -1381,9 +1623,9 @@ class OBJECT_OT_Export_Parameters(bpy.types.Operator):
     country = bpy.props.StringProperty()
 
     def execute(self, context):
-        path = bpy.data.scenes['Scene'].my_tool.folder_path_export
+        path = bpy.context.scene.iso_render.folder_path_export
         f = open(path + 'initial_conditions.py', 'w+')
-        f.write("#Object type: " + bpy.data.scenes['Scene'].InitialObjects + "\r\n")
+        f.write("#Object type: " + bpy.context.scene.iso_render.initial_objects + "\r\n")
         f.write("\r\n")
         f.write("import numpy as np" + "\r\n")
         f.write("\r\n")
@@ -1391,27 +1633,27 @@ class OBJECT_OT_Export_Parameters(bpy.types.Operator):
         f.write("Ny = Nx" + "\r\n")
         f.write("tmax = 10" + "\r\n")
         f.write("dt = 0.001" + "\r\n")
-        f.write("xmax = " + str(bpy.data.scenes['Scene'].my_tool.int_x_size) + "\r\n")
-        f.write("ymax = " + str(bpy.data.scenes['Scene'].my_tool.int_y_size) + "\r\n")
+        f.write("xmax = " + str(bpy.context.scene.iso_render.int_x_size) + "\r\n")
+        f.write("ymax = " + str(bpy.context.scene.iso_render.int_y_size) + "\r\n")
         f.write("\r\n")
-        f.write("x_ob_pos = " + str(bpy.data.scenes['Scene'].my_tool.x_ob_pos) + "\r\n")
-        f.write("y_ob_pos = " + str(bpy.data.scenes['Scene'].my_tool.y_ob_pos) + "\r\n")
-        f.write("z_ob_pos = " + str(bpy.data.scenes['Scene'].my_tool.z_ob_pos) + "\r\n")
+        f.write("x_ob_pos = " + str(bpy.context.scene.iso_render.x_ob_pos) + "\r\n")
+        f.write("y_ob_pos = " + str(bpy.context.scene.iso_render.y_ob_pos) + "\r\n")
+        f.write("z_ob_pos = " + str(bpy.context.scene.iso_render.z_ob_pos) + "\r\n")
         f.write("\r\n")
         f.write("images = 100" + "\r\n")
-        f.write("absorb_coeff = " + str(bpy.data.scenes['Scene'].my_tool.int_absorb_coeff) + "\r\n")
-        if (bpy.data.scenes['Scene'].InitialObjects == "GaussBeam"):
+        f.write("absorb_coeff = " + str(bpy.context.scene.iso_render.int_absorb_coeff) + "\r\n")
+        if (bpy.context.scene.iso_render.initial_objects == "GaussBeam"):
             f.write("fixmaximum = 2/(4*np.pi)" + "\r\n") 
-        if (bpy.data.scenes['Scene'].InitialObjects == "Vortex"):
+        if (bpy.context.scene.iso_render.initial_objects == "Vortex"):
             f.write("fixmaximum= 2/(4*np.pi*np.exp(1))" + "\r\n")
         f.write("\r\n") 
         f.write("\r\n")
         f.write("def psi_0(x,y):" + "\r\n") 
         f.write("\r\n")
-        f.write("   zR = " + str(bpy.data.scenes['Scene'].my_tool.zR_ob) + "\r\n")
-        f.write("   zR = " + str(bpy.data.scenes['Scene'].my_tool.zini_ob) + "\r\n")
+        f.write("   zR = " + str(bpy.context.scene.iso_render.zR_ob) + "\r\n")
+        f.write("   zR = " + str(bpy.context.scene.iso_render.zini_ob) + "\r\n")
         f.write("   qini = 2*1.j*zini+zR" + "\r\n")
-        if (bpy.data.scenes['Scene'].InitialObjects == "Vortex"):
+        if (bpy.context.scene.iso_render.initial_objects == "Vortex"):
             f.write("   r=np.sqrt(x**2+y**2)" + "\r\n")
             f.write("   phase=np.exp(1.j*np.arctan2(y,x))" + "\r\n")
         f.write("   f = np.sqrt(2*zR/np.pi)/qini*np.exp(-(x**2+y**2)/qini)" + "\r\n")
@@ -1426,6 +1668,57 @@ class OBJECT_OT_Export_Parameters(bpy.types.Operator):
         f.close()
 
         return{'FINISHED'}
+
+
+#Saves the actual template
+class OBJECT_OT_SaveThisFiles(bpy.types.Operator):
+    bl_idname = "save_this.files"
+    bl_label = "SaveThisFiles"
+    country = bpy.props.StringProperty()
+
+
+    #This code 
+    def execute(self, context):
+    
+        bpy.ops.particle.forward()
+        bpy.ops.particle.backward()
+        
+        objs = bpy.data.objects
+
+        if "Ico_9_extra" in objs:
+            objs.remove(objs["Ico_9_extra"], True)        
+
+        dir_image_path = bpy.context.scene.iso_render.objects_path
+
+        #Define an error message if occurs a problem during the run, is showed using a popup
+        def error_message(self, context):
+            self.layout.label("Unable to save the Files. Try again with other path")
+
+        try:
+            #Sets the path where the files will be stored, by default the same as the datafile
+            if dir_image_path == "":
+                bpy.ops.wm.save_as_mainfile(filepath="/Users/edgarfigueiras/Desktop/template.blend")
+                #Define a confirmation message to the default path            
+                def confirm_message(self, context):
+                    self.layout.label("Template file saved at: " + bpy.context.scene.iso_render.path )
+
+            else:              
+                bpy.ops.wm.save_as_mainfile(filepath = dir_image_path + "template.blend")
+               
+                #Define a confirmation message to the selected path 
+                def confirm_message(self, context):
+                    self.layout.label("Template file saved at: " + dir_image_path )  
+
+
+            bpy.context.window_manager.popup_menu(confirm_message, title="Saved successful", icon='SCENE') 
+
+            bpy.ops.render.render( write_still=True )
+                
+        except:
+            bpy.context.window_manager.popup_menu(error_message, title="An error ocurred", icon='CANCEL')
+
+
+        return{'FINISHED'} 
 
 #Renders all objects one by one jumping between states
 class OBJECT_OT_SaveAllFiles(bpy.types.Operator):
@@ -1443,7 +1736,7 @@ class OBJECT_OT_SaveAllFiles(bpy.types.Operator):
         objs = bpy.data.objects
         objs.remove(objs["Ico_9_extra"], True)
 
-        dir_image_path = bpy.data.scenes['Scene'].my_tool.objects_path
+        dir_image_path = bpy.context.scene.iso_render.objects_path
 
         #Define an error message if occurs a problem during the run, is showed using a popup
         def error_message(self, context):
@@ -1451,7 +1744,7 @@ class OBJECT_OT_SaveAllFiles(bpy.types.Operator):
 
         #Calculate the total of states
         try:
-            path = bpy.data.scenes['Scene'].my_tool.path #Origin from where the data will be readen, selected by the first option in the Panel
+            path = bpy.context.scene.iso_render.path #Origin from where the data will be readen, selected by the first option in the Panel
             file_with_binary_data = open(path, 'rb+') #File with binary data
 
             array_with_all_data = np.load(file_with_binary_data) #Gets the binary data as an array with 6 vectors (x_data, x_probability, y_data, y_probability, z_data, z_probability)
@@ -1475,14 +1768,14 @@ class OBJECT_OT_SaveAllFiles(bpy.types.Operator):
                     bpy.ops.wm.save_as_mainfile(filepath="/Users/edgarfigueiras/Desktop/" + str(x) + ".blend")
                     #Define a confirmation message to the default path            
                     def confirm_message(self, context):
-                        self.layout.label("Render image saved at: " + bpy.data.scenes['Scene'].my_tool.path )
+                        self.layout.label("Template files saved at: " + bpy.context.scene.iso_render.path )
 
                 else:                
                     bpy.ops.wm.save_as_mainfile(filepath = dir_image_path + str(x) + ".blend")
                    
                     #Define a confirmation message to the selected path 
                     def confirm_message(self, context):
-                        self.layout.label("Rendered image saved at: " + dir_image_path )   
+                        self.layout.label("Template files saved at: " + dir_image_path )   
 
                 bpy.ops.render.render( write_still=True )
 
@@ -1497,45 +1790,25 @@ class OBJECT_OT_SaveAllFiles(bpy.types.Operator):
 
         return{'FINISHED'} 
 
-
-class OBJECT_PT_my_panel(Panel):
-    bl_idname = "OBJECT_PT_my_panel"
-    bl_label = "Simulation Panel"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
-    bl_category = "Tools"
-    bl_context = "objectmode"
-
-'''
-class PanelSimulation(bpy.types.Panel):
-    """Panel para añadir al entorno 3D"""
-    bl_label = "Simulation Panel"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
-    COMPAT_ENGINES = {'BLENDER_RENDER'}
-
-    def draw(self, context):
-        layout = self.layout
-        scn = context.scene
-        col = layout.column(align=True)
-        box0 = layout.box()
-
-        box0.label(text="CALCULATION")
-
-        box0.label(text="Select the folder with the data", icon='FILE_FOLDER')
-
-        box0.prop(scn.my_tool, "folder_path", text="")
-
-        box0.label(text="Select the type of psi matrix (2D by default)", icon='SETTINGS')
-
-        box0.prop_search(context.scene, "CalculationFormat", context.scene, "calculationformats", text="" , icon='OBJECT_DATA')
-
-        box0.label(text="Total particles number", icon='PARTICLE_DATA')
-
-        box0.prop(scn.my_tool, "int_box_particulas_Simulacion")
-
-        box0.operator("particles.calculation", text="Calculate data")
-'''
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+#
+#    _______    ______   __    __  ________  __        ______  
+#   |       \  /      \ |  \  |  \|        \|  \      /      \
+#   | $$$$$$$\|  $$$$$$\| $$\ | $$| $$$$$$$$| $$     |  $$$$$$\
+#   | $$__/ $$| $$__| $$| $$$\| $$| $$__    | $$     | $$___\$$
+#   | $$    $$| $$    $$| $$$$\ $$| $$  \   | $$      \$$    \ 
+#   | $$$$$$$ | $$$$$$$$| $$\$$ $$| $$$$$   | $$      _\$$$$$$\
+#   | $$      | $$  | $$| $$ \$$$$| $$_____ | $$_____|  \__| $$
+#   | $$      | $$  | $$| $$  \$$$| $$     \| $$     \\$$    $$
+#    \$$       \$$   \$$ \$$   \$$ \$$$$$$$$ \$$$$$$$$ \$$$$$$ 
+#
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################                                                   
 
 class PanelStartingParameters(bpy.types.Panel):
     """Panel para añadir al entorno 3D"""
@@ -1543,52 +1816,54 @@ class PanelStartingParameters(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     COMPAT_ENGINES = {'BLENDER_RENDER'}
+    bl_category = "QMBlender"
 
     def draw(self, context):
         layout = self.layout
         scn = context.scene
         col = layout.column(align=True)
-        box01 = layout.box()
+        box = layout.box()
 
-        box01.label(text="INITIAL PARAMETERS")
 
-        box01.operator("areatype.splitview", text="Split Screen")
+        box.label(text="INITIAL PARAMETERS")
 
-        box01.label(text="Environment", icon='META_CUBE')
+        #box.operator("areatype.splitview", text="Split Screen")
+
+        box.label(text="Environment", icon='META_CUBE')
        
-        box01.prop(scn.my_tool, "int_x_size")
+        box.prop(scn.iso_render, "int_x_size")
 
-        box01.prop(scn.my_tool, "int_y_size")
+        box.prop(scn.iso_render, "int_y_size")
 
-        box01.label(text="Absorb coeff, 0 = Periodic boundary")
+        box.label(text="Absorb coeff, 0 = Periodic boundary")
 
-        box01.prop(scn.my_tool, "int_absorb_coeff")
+        box.prop(scn.iso_render, "int_absorb_coeff")
 
-        box01.operator("initial.object", text="Create environment")
+        box.operator("initial.object", text="Create environment")
 
-        box01.label(text="Object", icon='META_BALL')
+        box.label(text="Object", icon='META_BALL')
 
-        box01.label(text="Select object and properties")
+        box.label(text="Select object and properties")
 
-        box01.prop_search(context.scene, "InitialObjects", context.scene, "initialobjects", text="", icon='OBJECT_DATA' )
+        box.prop(scn.iso_render, "initial_objects", text="", icon='OBJECT_DATA' )
 
-        box01.prop(scn.my_tool, "x_ob_pos")
+        box.prop(scn.iso_render, "x_ob_pos")
 
-        box01.prop(scn.my_tool, "y_ob_pos")
+        box.prop(scn.iso_render, "y_ob_pos")
 
-        box01.prop(scn.my_tool, "z_ob_pos")
+        box.prop(scn.iso_render, "z_ob_pos")
 
-        box01.prop(scn.my_tool, "zR_ob")
+        box.prop(scn.iso_render, "zR_ob")
 
-        box01.prop(scn.my_tool, "zini_ob")
+        box.prop(scn.iso_render, "zini_ob")
 
-        box01.operator("initial.object2", text="Create object")
+        box.operator("initial.object2", text="Create object")
 
-        box01.label(text="Select the folder where you will export the data", icon='FILE_FOLDER')
+        box.label(text="Select the folder where you will export the data", icon='FILE_FOLDER')
 
-        box01.prop(scn.my_tool, "folder_path_export", text="")
+        box.prop(scn.iso_render, "folder_path_export", text="")
 
-        box01.operator("export.parameters", text="Export parameters")
+        box.operator("export.parameters", text="Export parameters")
 
 
 class PanelDataSelection(bpy.types.Panel):
@@ -1597,6 +1872,7 @@ class PanelDataSelection(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     COMPAT_ENGINES = {'BLENDER_RENDER'}
+    bl_category = "QMBlender"
 
     def draw(self, context):
         layout = self.layout
@@ -1610,21 +1886,20 @@ class PanelDataSelection(bpy.types.Panel):
 
         box1.label(text="Select the data file", icon='LIBRARY_DATA_DIRECT')
 
-        box1.prop(scn.my_tool, "path", text="")
+        box1.prop(scn.iso_render, "path", text="")
 
         box1.label(text="Select the number of particles to be shown by step", icon='PARTICLE_DATA')
 
-        box1.prop(scn.my_tool, "int_box_n_particulas")
-
+        box1.prop(scn.iso_render, "int_box_n_particulas")
 
 
         box2.label(text="SIMULATION")
 
-        box2.prop(scn.my_tool, "int_box_particles_size")
+        box2.prop(scn.iso_render, "int_box_particles_size")
 
         box2.label(text="Select the colour range", icon='GROUP_VCOL')
 
-        box2.prop_search(context.scene, "ColorSchema", context.scene, "colorschema", text="")
+        box2.prop(scn.iso_render, "color_schema", text="")
 
         box2.operator("particle.calculator", text="Place Particles")
 
@@ -1633,14 +1908,13 @@ class PanelDataSelection(bpy.types.Panel):
         box2.operator("reset.image", text="Reset Environment")
 
 
- 
-
 class PanelStates(bpy.types.Panel):
     """Panel para añadir al entorno 3D"""
     bl_label = "States Panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     COMPAT_ENGINES = {'BLENDER_RENDER'}
+    bl_category = "QMBlender"
 
     def draw(self, context):
         layout = self.layout
@@ -1657,13 +1931,13 @@ class PanelStates(bpy.types.Panel):
 
         row = col.row(align = True)
         
-        row.prop(scn.my_tool, "total_states_info")
+        row.prop(scn.iso_render, "total_states_info")
 
         row.enabled = False 
 
         row_box = box22.row()
 
-        row_box.prop(scn.my_tool, "int_box_state")
+        row_box.prop(scn.iso_render, "int_box_state")
 
         row_box.enabled = True    
 
@@ -1674,12 +1948,14 @@ class PanelStates(bpy.types.Panel):
         row.operator("particle.forward", text="Next State", icon='FORWARD')
 
 
+
 class PanelSaveFiles(bpy.types.Panel):
     """Panel para añadir al entorno 3D"""
     bl_label = "Objects template saver"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     COMPAT_ENGINES = {'BLENDER_RENDER'}
+    bl_category = "QMBlender"
 
     def draw(self, context):
         layout = self.layout
@@ -1691,7 +1967,11 @@ class PanelSaveFiles(bpy.types.Panel):
 
         box1.label(text="Select the path to save the files", icon='LIBRARY_DATA_DIRECT')
 
-        box1.prop(scn.my_tool, "objects_path", text="")
+        box1.prop(scn.iso_render, "objects_path", text="")
+
+        box1.label(text="Save this file to be used as a template", icon='PARTICLE_DATA')
+
+        box1.operator("save_this.files", text="Save this file")
 
         box1.label(text="Save all the files to be used as templates for generate models", icon='PARTICLE_DATA')
 
@@ -1704,6 +1984,7 @@ class PanelTemplate(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     COMPAT_ENGINES = {'BLENDER_RENDER'}
+    bl_category = "QMBlender"
 
     def draw(self, context):
         layout = self.layout
@@ -1731,24 +2012,22 @@ class PanelCut(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     COMPAT_ENGINES = {'BLENDER_RENDER'}
+    bl_category = "QMBlender"
 
     def draw(self, context):
         layout = self.layout
         scn = context.scene
         box22 = layout.box()
 
-
         box22.label(text="CUTS")
 
         box22.label(text="Number of planes (1 by default)", icon='MOD_SOLIDIFY')
 
-        box22.prop_search(context.scene, "PlanesNumber", context.scene, "planesnumber", text="" , icon='OBJECT_DATA')
+        box22.prop(scn.iso_render, "planes_number", text="")
 
         box22.label(text="Places the cut plane in the 3D view", icon='MOD_UVPROJECT')
 
         box22.operator("place.plane", text="Place plane")
-
-        #box22.prop(scn.my_tool, "bool_cut_box", text="Inverse cut area")
 
         box22.operator("bool_cut_box", text="Place plane")
 
@@ -1761,13 +2040,13 @@ class PanelCut(bpy.types.Panel):
         box22.operator("delete.plane", text="Delete Planes")
 
 
-
 class PanelProject(bpy.types.Panel):
     """Panel para añadir al entorno 3D"""
     bl_label = "Projection Panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     COMPAT_ENGINES = {'BLENDER_RENDER'}
+    bl_category = "QMBlender"
 
     def draw(self, context):
         layout = self.layout
@@ -1778,7 +2057,7 @@ class PanelProject(bpy.types.Panel):
 
         box22.label(text="Axis of the projection", icon='MANIPUL')
 
-        box22.prop_search(context.scene, "PlanesProject", context.scene, "planesproject", text="" , icon='OBJECT_DATA')
+        box22.prop(scn.iso_render, "planes_project", text="")
 
         box22.label(text="Places the projection plane in the 3D view", icon='MOD_UVPROJECT')
 
@@ -1788,7 +2067,7 @@ class PanelProject(bpy.types.Panel):
 
         box22.label(text="Sets the offset of the projection respect the center", icon='MOD_UVPROJECT')
 
-        box22.prop(scn.my_tool, "int_box_offset")
+        box22.prop(scn.iso_render, "int_box_offset")
 
         box22.label(text="Makes the projection using the plane", icon='MOD_MIRROR')
 
@@ -1806,6 +2085,7 @@ class PanelRenderData(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     COMPAT_ENGINES = {'BLENDER_RENDER'}
+    bl_category = "QMBlender"
 
     def draw(self, context):
         layout = self.layout
@@ -1827,11 +2107,11 @@ class PanelRenderData(bpy.types.Panel):
 
         box3.label(text="Select the folder to store renders", icon='FILE_FOLDER')
 
-        box3.prop(scn.my_tool, "image_path", text="")
+        box3.prop(scn.iso_render, "image_path", text="")
 
         box3.label(text="Select the image format (PNG by default)", icon='RENDER_STILL')
 
-        box3.prop_search(context.scene, "ImageFormat", context.scene, "imageformats", text="" , icon='OBJECT_DATA')
+        box3.prop(scn.iso_render, "image_format", text="")
 
         box3.operator("render.image", text="Save image")
 
@@ -1843,15 +2123,15 @@ class PanelRenderData(bpy.types.Panel):
 
         box3.label(text="Video frame by frame", icon='CAMERA_DATA')
 
-        box3.prop(scn.my_tool, "int_box_frames")
+        box3.prop(scn.iso_render, "int_box_frames")
 
-        box3.prop(scn.my_tool, "int_box_total_frames")
+        box3.prop(scn.iso_render, "int_box_total_frames")
 
         box3.operator("render_all_frame.image", text="Save all images as film")
 
         box3.label(text="Select the video format (AVI by default)", icon='RENDER_ANIMATION')
 
-        box3.prop_search(context.scene, "VideoFormat", context.scene, "videoformats", text="" , icon='OBJECT_DATA')
+        box3.prop(scn.iso_render, "video_format", text="")
 
         box3.operator("render.video", text="Save video")
 
@@ -1862,6 +2142,7 @@ class PanelInfoShortcuts(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     COMPAT_ENGINES = {'BLENDER_RENDER'}
+    bl_category = "QMBlender"
 
     def draw(self, context):
         layout = self.layout
@@ -1877,112 +2158,33 @@ class PanelInfoShortcuts(bpy.types.Panel):
 
         box4.label(text="To modify grid values F6", icon='INFO')
 
+        box4.label(text="Transform particles into objects using CRTL + SHIFT + A", icon='INFO')
 
+        box4.label(text="Join all selected objects using CRTL + J", icon='INFO')
         
 
 
-# ------------------------------------------------------------------------
-#    Register and unregister functions
-# ------------------------------------------------------------------------
 
-def rellenar_selectores(scene):
-    bpy.app.handlers.scene_update_pre.remove(rellenar_selectores)
-    scene.imageformats.clear()
-    scene.videoformats.clear()
-    scene.calculationformats.clear()
-    scene.planesnumber.clear()
-    scene.planesproject.clear()
-    scene.planesproject.clear()
-    scene.initialobjects.clear()
-    scene.colorschema.clear()
-
-
-    for identifier, name, description in image_format:
-        scene.imageformats.add().name = name
-
-    for identifier, name, description in video_format:
-        scene.videoformats.add().name = name
-
-    for identifier, name, description in calculation_format:
-        scene.calculationformats.add().name = name
-
-    for identifier, name, description in planes_number:
-        scene.planesnumber.add().name = name
-
-    for identifier, name, description in planes_project:
-        scene.planesproject.add().name = name
-
-    for identifier, name, description in initial_objects:
-        scene.initialobjects.add().name = name
-
-    for identifier, name, description in color_schema:
-        scene.colorschema.add().name = name
-
-
-def register():
-    bpy.utils.register_module(__name__)
-
-    bpy.types.Scene.imageformats = bpy.props.CollectionProperty(
-            type=bpy.types.PropertyGroup
-        )
-
-    bpy.types.Scene.videoformats = bpy.props.CollectionProperty(
-            type=bpy.types.PropertyGroup
-        )
-
-    bpy.types.Scene.calculationformats = bpy.props.CollectionProperty(
-            type=bpy.types.PropertyGroup
-        )
-
-    bpy.types.Scene.planesnumber = bpy.props.CollectionProperty(
-            type=bpy.types.PropertyGroup
-        )
-
-    bpy.types.Scene.planesproject = bpy.props.CollectionProperty(
-            type=bpy.types.PropertyGroup
-        )
-
-    bpy.types.Scene.initialobjects = bpy.props.CollectionProperty(
-            type=bpy.types.PropertyGroup
-        )
-
-    bpy.types.Scene.colorschema = bpy.props.CollectionProperty(
-            type=bpy.types.PropertyGroup
-        )
-
-    bpy.types.Scene.ImageFormat = bpy.props.StringProperty()
-
-    bpy.types.Scene.VideoFormat = bpy.props.StringProperty()
-
-    bpy.types.Scene.CalculationFormat = bpy.props.StringProperty()
-
-    bpy.types.Scene.PlanesNumber = bpy.props.StringProperty()
-
-    bpy.types.Scene.PlanesProject = bpy.props.StringProperty()
-
-    bpy.types.Scene.InitialObjects = bpy.props.StringProperty()
-
-    bpy.types.Scene.ColorSchema = bpy.props.StringProperty()
-
-    bpy.app.handlers.scene_update_pre.append(rellenar_selectores)
-
-    bpy.types.Scene.my_tool = PointerProperty(type=MySettings)
-
-    
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
-    del bpy.types.Scene.my_tool
-    del bpy.types.Scene.coll
-    del bpy.types.Scene.coll_string
-
-if __name__ == "__main__":
-    register()
-
-bl_info = {    
-    "name": "Particles calculator",    
-    "category": "Object",
-}
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+#
+#    ______   __       __        ________  __    __  __    __   ______  ________  ______   ______   __    __   ______  
+#   /      \ |  \     /  \      |        \|  \  |  \|  \  |  \ /      \|        \|      \ /      \ |  \  |  \ /      \ 
+#   |  $$$$$$\| $$\   /  $$      | $$$$$$$$| $$  | $$| $$\ | $$|  $$$$$$\\$$$$$$$$ \$$$$$$|  $$$$$$\| $$\ | $$|  $$$$$$\
+#   | $$  | $$| $$$\ /  $$$      | $$__    | $$  | $$| $$$\| $$| $$   \$$  | $$     | $$  | $$  | $$| $$$\| $$| $$___\$$
+#   | $$  | $$| $$$$\  $$$$      | $$  \   | $$  | $$| $$$$\ $$| $$        | $$     | $$  | $$  | $$| $$$$\ $$ \$$    \ 
+#   | $$ _| $$| $$\$$ $$ $$      | $$$$$   | $$  | $$| $$\$$ $$| $$   __   | $$     | $$  | $$  | $$| $$\$$ $$ _\$$$$$$\
+#   | $$/ \ $$| $$ \$$$| $$      | $$      | $$__/ $$| $$ \$$$$| $$__/  \  | $$    _| $$_ | $$__/ $$| $$ \$$$$|  \__| $$
+#    \$$ $$ $$| $$  \$ | $$      | $$       \$$    $$| $$  \$$$ \$$    $$  | $$   |   $$ \ \$$    $$| $$  \$$$ \$$    $$
+#    \$$$$$$\ \$$      \$$       \$$        \$$$$$$  \$$   \$$  \$$$$$$    \$$    \$$$$$$  \$$$$$$  \$$   \$$  \$$$$$$ 
+#       \$$$  
+#
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
 
 
 #*************************************************************************# 
@@ -2051,13 +2253,13 @@ class ParticleCalculator(bpy.types.Operator):
         bpy.ops.object.select_by_type(type='MESH')
         bpy.ops.object.delete()
         bpy.context.scene.frame_current = 0    
-        bpy.data.scenes["Scene"].my_tool.int_box_state = -1
+        bpy.context.scene.iso_render.int_box_state = -1
         
         bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)   #Refresh the actual visualization with the new generator object placed  
 
         #Reading the data to generate the function who originated it
         #Read the data from te panel 
-        path = bpy.data.scenes['Scene'].my_tool.path #Origin from where the data will be readen, selected by the first option in the Panel
+        path = bpy.context.scene.iso_render.path #Origin from where the data will be readen, selected by the first option in the Panel
         
         try:
             file_with_binary_data = open(path, 'rb+') #File with binary data
@@ -2073,10 +2275,10 @@ class ParticleCalculator(bpy.types.Operator):
         N = len(array_3d)   #Size of the matrix
 
         #Sets the maximum state avaliable
-        bpy.context.scene.my_tool.total_states_info = N-1
+        bpy.context.scene.iso_render.total_states_info = N-1
 
 
-        particles_number = bpy.data.scenes['Scene'].my_tool.int_box_n_particulas #Read from the panel 
+        particles_number = bpy.context.scene.iso_render.int_box_n_particulas #Read from the panel 
         
 
         #Set the world color 
@@ -2098,7 +2300,7 @@ class ParticleCalculator(bpy.types.Operator):
                     
         psys1.name = 'Drops' 
 
-        if (bpy.context.scene.ColorSchema == "FullRange" or bpy.context.scene.ColorSchema==""):
+        if (bpy.context.scene.iso_render.color_schema == "FullRange" or bpy.context.scene.iso_render.color_schema==""):
             #Create materialsx
             #Creating the 10 materials to make the degradation
             mat_bur = bpy.data.materials.new('Burdeaux')
@@ -2144,7 +2346,7 @@ class ParticleCalculator(bpy.types.Operator):
             #materials_vector = ([mat_dar, mat_blu, mat_sky, mat_tur, mat_gre, mat_lim, mat_pap, mat_ora, mat_red, mat_bur])
             materials_vector = ([mat_bur, mat_red, mat_ora, mat_pap, mat_lim, mat_gre, mat_tur, mat_sky, mat_blu, mat_dar])
         
-        if (bpy.context.scene.ColorSchema == "MediumRange"):
+        if (bpy.context.scene.iso_render.color_schema == "MediumRange"):
             #Create materialsx
             #Creating the 10 materials to make the degradation
 
@@ -2192,7 +2394,7 @@ class ParticleCalculator(bpy.types.Operator):
             #materials_vector = ([mat_dar, mat_blu, mat_sky, mat_tur, mat_gre, mat_lim, mat_pap, mat_ora, mat_red, mat_bur])
             materials_vector = ([mat_ora, mat_lio, mat_pap, mat_dye, mat_yel, mat_fli, mat_lim, mat_gre, mat_tur, mat_sky])
 
-        if (bpy.context.scene.ColorSchema == "ColdRange"):
+        if (bpy.context.scene.iso_render.color_schema == "ColdRange"):
             #Create materialsx
             #Creating the 10 materials to make the degradation   
 
@@ -2240,7 +2442,7 @@ class ParticleCalculator(bpy.types.Operator):
             materials_vector = ([mat_yel, mat_fli, mat_lim, mat_gre, mat_tur, mat_lbl, mat_sky, mat_cbl, mat_blu, mat_dar])
         
 
-        if (bpy.context.scene.ColorSchema == "HotRange"):
+        if (bpy.context.scene.iso_render.color_schema == "HotRange"):
             #Create materialsx
             #Creating the 10 materials to make the degradation
             mat_bur = bpy.data.materials.new('Burdeaux')
@@ -2310,7 +2512,7 @@ class ParticleCalculator(bpy.types.Operator):
         psys1.settings.physics_type = 'NEWTON'
         psys1.settings.mass = 0
         #Takes from GUI the size to scale particles
-        particles_selected_size = bpy.data.scenes['Scene'].my_tool.int_box_particles_size
+        particles_selected_size = bpy.context.scene.iso_render.int_box_particles_size
         psys1.settings.particle_size = particles_selected_size #Remember the object scale 0.0001 of the icospheres to not be showed in the visualization
         psys1.settings.use_multiply_size_mass = False
      
@@ -2366,27 +2568,8 @@ class ParticleCalculator(bpy.types.Operator):
 
         return {'FINISHED'}            # this lets blender know the operator finished successfully.
 
-# ------------------------------------------------------------------------
-#    Register and unregister functions
-# ------------------------------------------------------------------------
-
-def register():
-    bpy.utils.register_class(ParticleCalculator)
 
 
-def unregister():
-    bpy.utils.unregister_class(ParticleCalculator)
-    
-# This allows you to run the script directly from blenders text editor
-# to test the addon without having to install it.
-if __name__ == "__main__":
-    register()   
-
-
-bl_info = {    
-    "name": "Particles Stabilizer",    
-    "category": "Object",
-}
 
 #*************************************************************************# 
 # ----------------------------------------------------------------------- #
@@ -2416,7 +2599,7 @@ class ParticlesStabilizer(bpy.types.Operator):
                 emitter = bpy.data.objects['Sphere.00' + str(x)]
             return emitter.particle_systems[-1] 
 
-        path = bpy.data.scenes['Scene'].my_tool.path #Origin from where the data will be readen, selected by the first option in the Panel
+        path = bpy.context.scene.iso_render.path #Origin from where the data will be readen, selected by the first option in the Panel
         try:
             file_with_binary_data = open(path, 'rb+') #File with binary data
 
@@ -2430,7 +2613,7 @@ class ParticlesStabilizer(bpy.types.Operator):
 
         N = len(array_3d[0])   #Size of the matrix
 
-        particles_number = bpy.data.scenes['Scene'].my_tool.int_box_n_particulas #Read from the panel 
+        particles_number = bpy.context.scene.iso_render.int_box_n_particulas #Read from the panel 
         
         x_pos = 0
         y_pos = 0
@@ -2438,7 +2621,7 @@ class ParticlesStabilizer(bpy.types.Operator):
         prob = 0
         cont = 0
 
-        actual_state = bpy.data.scenes["Scene"].my_tool.int_box_state 
+        actual_state = bpy.context.scene.iso_render.int_box_state 
 
         if (actual_state == -1):
             actual_state=0
@@ -2447,7 +2630,7 @@ class ParticlesStabilizer(bpy.types.Operator):
         emitter = bpy.data.objects[object_name]  
         psys1 = emitter.particle_systems[-1] 
 
-        particles_number = bpy.data.scenes['Scene'].my_tool.int_box_n_particulas
+        particles_number = bpy.context.scene.iso_render.int_box_n_particulas
 
         #Use an auxiliar array to work with a variable number of points, 
         #allowing the user to make diferent points simulation with good results
@@ -2478,36 +2661,7 @@ class ParticlesStabilizer(bpy.types.Operator):
         #bpy.context.scene.frame_current = bpy.context.scene.frame_current + 1
         return {'FINISHED'}            # this lets blender know the operator finished successfully.
 
-# ------------------------------------------------------------------------
-#    Register and unregister functions
-# ------------------------------------------------------------------------
-
-def register():
-    bpy.utils.register_class(ParticlesStabilizer)
-
-
-def unregister():
-    bpy.utils.unregister_class(ParticlesStabilizer)
     
-# This allows you to run the script directly from blenders text editor
-# to test the addon without having to install it.
-if __name__ == "__main__":
-    register()   
-
-
-
-bl_info = {    
-    "name": "Particles Forward",    
-    "category": "Object",
-}
-
-import bpy
-import time
-import math
-import random
-import struct
-import binascii
-import numpy as np
 
 #*************************************************************************# 
 # ----------------------------------------------------------------------- #
@@ -2544,7 +2698,7 @@ class ParticlesForward(bpy.types.Operator):
         #Calculates the position of spheres in a state given
         def sphere_placement(state, array_3d):
             actual_state = state
-            particles_number = bpy.context.scene.my_tool.int_box_n_particulas
+            particles_number = bpy.context.scene.iso_render.int_box_n_particulas
 
             x_pos = 0
             y_pos = 0
@@ -2629,11 +2783,11 @@ class ParticlesForward(bpy.types.Operator):
             bpy.ops.particle.stabilizer()
 
         #Take the actual state
-        actual_state = bpy.data.scenes["Scene"].my_tool.int_box_state
+        actual_state = bpy.context.scene.iso_render.int_box_state
         
         #Calculate the total of states
         try:
-            path = bpy.data.scenes['Scene'].my_tool.path #Origin from where the data will be readen, selected by the first option in the Panel
+            path = bpy.context.scene.iso_render.path #Origin from where the data will be readen, selected by the first option in the Panel
             file_with_binary_data = open(path, 'rb+') #File with binary data
 
             array_with_all_data = np.load(file_with_binary_data) #Gets the binary data as an array with 6 vectors (x_data, x_probability, y_data, y_probability, z_data, z_probability)
@@ -2652,7 +2806,7 @@ class ParticlesForward(bpy.types.Operator):
         #First time do this
         if(actual_state == -1):
             #Calculate the coordinates of each particle
-            bpy.data.scenes["Scene"].my_tool.int_box_state = 1
+            bpy.context.scene.iso_render.int_box_state = 1
             sphere_placement(1, array_3d)
             
         
@@ -2660,12 +2814,12 @@ class ParticlesForward(bpy.types.Operator):
             #If is not the last state
             if((actual_state+1) < int(total_states)):
                 #Take the name of the Sphere to make the complete name and disable it
-                bpy.data.scenes["Scene"].my_tool.int_box_state = actual_state + 1
+                bpy.context.scene.iso_render.int_box_state = actual_state + 1
                 sphere_placement(actual_state+1, array_3d)
                 
             #If its the last state 
             if((actual_state+1) >= int(total_states)):
-                bpy.data.scenes["Scene"].my_tool.int_box_state = 0
+                bpy.context.scene.iso_render.int_box_state = 0
                 sphere_placement(0, array_3d)
                 
 
@@ -2677,26 +2831,6 @@ class ParticlesForward(bpy.types.Operator):
 
         return {'FINISHED'}            # this lets blender know the operator finished successfully.
 
-# ------------------------------------------------------------------------
-#    Register and unregister functions
-# ------------------------------------------------------------------------
-
-def register():
-    bpy.utils.register_class(ParticlesForward)
-
-
-def unregister():
-    bpy.utils.unregister_class(ParticlesForward)
-    
-# This allows you to run the script directly from blenders text editor
-# to test the addon without having to install it.
-if __name__ == "__main__":
-    register()   
-
-bl_info = {    
-    "name": "Particles Backward",    
-    "category": "Object",
-}
 
 
 #*************************************************************************# 
@@ -2734,7 +2868,7 @@ class ParticlesBackward(bpy.types.Operator):
         #Calculates the position of spheres in a state given
         def sphere_placement(state, array_3d):
             actual_state = state
-            particles_number = bpy.context.scene.my_tool.int_box_n_particulas
+            particles_number = bpy.context.scene.iso_render.int_box_n_particulas
 
             x_pos = 0
             y_pos = 0
@@ -2819,11 +2953,11 @@ class ParticlesBackward(bpy.types.Operator):
 
 
         #Take the actual state
-        actual_state = bpy.data.scenes["Scene"].my_tool.int_box_state
+        actual_state = bpy.context.scene.iso_render.int_box_state
         
         #Calculate the total of states
         try:
-            path = bpy.data.scenes['Scene'].my_tool.path #Origin from where the data will be readen, selected by the first option in the Panel
+            path = bpy.context.scene.iso_render.path #Origin from where the data will be readen, selected by the first option in the Panel
             file_with_binary_data = open(path, 'rb+') #File with binary data
 
             array_with_all_data = np.load(file_with_binary_data) #Gets the binary data as an array with 6 vectors (x_data, x_probability, y_data, y_probability, z_data, z_probability)
@@ -2842,18 +2976,18 @@ class ParticlesBackward(bpy.types.Operator):
 
         #First time do this
         if(actual_state == -1):
-            bpy.data.scenes["Scene"].my_tool.int_box_state = total_states - 1
+            bpy.context.scene.iso_render.int_box_state = total_states - 1
             sphere_placement(total_states-1,array_3d)
             
         else:
             #If is not the last state
             if((actual_state-1) >= 0):
-                bpy.data.scenes["Scene"].my_tool.int_box_state = actual_state - 1
+                bpy.context.scene.iso_render.int_box_state = actual_state - 1
                 sphere_placement(actual_state-1,array_3d)
 
             #If its the last state
             if((actual_state-1) < 0):
-                bpy.data.scenes["Scene"].my_tool.int_box_state = total_states - 1
+                bpy.context.scene.iso_render.int_box_state = total_states - 1
                 sphere_placement(total_states-1,array_3d)
 
 
@@ -2863,26 +2997,7 @@ class ParticlesBackward(bpy.types.Operator):
 
         return {'FINISHED'}            # this lets blender know the operator finished successfully.
 
-# ------------------------------------------------------------------------
-#    Register and unregister functions
-# ------------------------------------------------------------------------
 
-def register():
-    bpy.utils.register_class(ParticlesBackward)
-
-
-def unregister():
-    bpy.utils.unregister_class(ParticlesBackward)
-    
-# This allows you to run the script directly from blenders text editor
-# to test the addon without having to install it.
-if __name__ == "__main__":
-    register() 
-
-bl_info = {    
-    "name": "Particles Calculation",    
-    "category": "Object",
-}
 
 #*************************************************************************# 
 # ----------------------------------------------------------------------- #
@@ -2907,7 +3022,7 @@ class ParticlesCalculation(bpy.types.Operator):
             calculation_format_final = '2D'
         #Takes the data from the folder with all psi files
         try:
-            path = bpy.data.scenes['Scene'].my_tool.folder_path #Origin from where the data will be readen, selected by the first option in the Panel
+            path = bpy.context.scene.iso_render.folder_path #Origin from where the data will be readen, selected by the first option in the Panel
             
             psi_files_number=0
 
@@ -2925,7 +3040,7 @@ class ParticlesCalculation(bpy.types.Operator):
             bpy.context.window_manager.popup_menu(error_message, title="An error ocurred", icon='CANCEL')
     
         #number of 3D points for each step
-        number_of_points=bpy.context.scene.my_tool.int_box_particulas_Simulacion
+        number_of_points=bpy.context.scene.iso_render.int_box_particulas_Simulacion
         #3D matrix creation
         matrix_3d = np.zeros((160,number_of_points,4))
 
@@ -2933,7 +3048,7 @@ class ParticlesCalculation(bpy.types.Operator):
         array_aux = np.zeros((number_of_points, 4))
  
 
-        path=bpy.data.scenes['Scene'].my_tool.folder_path
+        path=bpy.context.scene.iso_render.folder_path
 
 
         #2D calculation    
@@ -2980,20 +3095,7 @@ class ParticlesCalculation(bpy.types.Operator):
 
         return {'FINISHED'}            # this lets blender know the operator finished successfully.
 
-# ------------------------------------------------------------------------
-#    Register and unregister functions
-# ------------------------------------------------------------------------
 
-def register():
-    bpy.utils.register_class(ParticlesCalculation)
-
-def unregister():
-    bpy.utils.unregister_class(ParticlesCalculation)
-
-bl_info = {    
-    "name": "Particles Stabilizer",    
-    "category": "Object",
-}
 
 #*************************************************************************# 
 # ----------------------------------------------------------------------- #
@@ -3023,7 +3125,7 @@ class ParticlesCut(bpy.types.Operator):
                 emitter = bpy.data.objects['Sphere.00' + str(x)]
             return emitter.particle_systems[-1] 
 
-        path = bpy.data.scenes['Scene'].my_tool.path #Origin from where the data will be readen, selected by the first option in the Panel
+        path = bpy.context.scene.iso_render.path #Origin from where the data will be readen, selected by the first option in the Panel
         try:
             file_with_binary_data = open(path, 'rb+') #File with binary data
 
@@ -3037,7 +3139,7 @@ class ParticlesCut(bpy.types.Operator):
 
         N = len(array_3d[0])   #Size of the matrix
 
-        particles_number = bpy.data.scenes['Scene'].my_tool.int_box_n_particulas #Read from the panel 
+        particles_number = bpy.context.scene.iso_render.int_box_n_particulas #Read from the panel 
         
         x_pos = 0
         y_pos = 0
@@ -3045,7 +3147,7 @@ class ParticlesCut(bpy.types.Operator):
         prob = 0
         cont = 0
 
-        actual_state = bpy.data.scenes["Scene"].my_tool.int_box_state 
+        actual_state = bpy.context.scene.iso_render.int_box_state 
 
         if (actual_state == -1):
             actual_state=0
@@ -3054,7 +3156,7 @@ class ParticlesCut(bpy.types.Operator):
         emitter = bpy.data.objects[object_name]  
         psys1 = emitter.particle_systems[-1] 
 
-        particles_number = bpy.data.scenes['Scene'].my_tool.int_box_n_particulas
+        particles_number = bpy.context.scene.iso_render.int_box_n_particulas
 
         #Use an auxiliar array to work with a variable number of points, 
         #allowing the user to make diferent points simulation with good results
@@ -3065,7 +3167,7 @@ class ParticlesCut(bpy.types.Operator):
 
         #Plane info
         #For just 1 plane
-        if(bpy.context.scene.PlanesNumber == "1P"):
+        if(bpy.context.scene.iso_render.planes_number == "1P"):
             cut_plane_1= "Cut_plane"
             plane_pos_1 = bpy.data.objects[cut_plane_1].location
             plane_size_1 = bpy.data.objects[cut_plane_1].dimensions
@@ -3081,14 +3183,14 @@ class ParticlesCut(bpy.types.Operator):
                 x_pos = array_aux[cont][0] 
                 y_pos = array_aux[cont][1] 
                 z_pos = array_aux[cont][2]
-                bpy.context.scene.my_tool.bool_cut_box
+                bpy.context.scene.iso_render.bool_cut_box
                 if(x_pos > (plane_pos_1[0])):
                     pa.location = (-10000,-10000,-10000)
                 prob = array_aux[cont][3] 
                 cont += 1
 
         #For 2 planes
-        if(bpy.context.scene.PlanesNumber == "2P"):
+        if(bpy.context.scene.iso_render.planes_number == "2P"):
             cut_plane_1= "Cut_plane"
             plane_pos_1 = bpy.data.objects[cut_plane_1].location
             plane_size_1 = bpy.data.objects[cut_plane_1].dimensions
@@ -3119,21 +3221,6 @@ class ParticlesCut(bpy.types.Operator):
         bpy.context.scene.frame_current = bpy.context.scene.frame_current + 1
         return {'FINISHED'}            # this lets blender know the operator finished successfully.
 
-# ------------------------------------------------------------------------
-#    Register and unregister functions
-# ------------------------------------------------------------------------
-
-def register():
-    bpy.utils.register_class(ParticlesCut)
-
-
-def unregister():
-    bpy.utils.unregister_class(ParticlesCut)
-    
-# This allows you to run the script directly from blenders text editor
-# to test the addon without having to install it.
-if __name__ == "__main__":
-    register()  
 
 
 #*************************************************************************# 
@@ -3164,7 +3251,7 @@ class ParticlesProjection(bpy.types.Operator):
                 emitter = bpy.data.objects['Sphere.00' + str(x)]
             return emitter.particle_systems[-1] 
 
-        path = bpy.data.scenes['Scene'].my_tool.path #Origin from where the data will be readen, selected by the first option in the Panel
+        path = bpy.context.scene.iso_render.path #Origin from where the data will be readen, selected by the first option in the Panel
         try:
             file_with_binary_data = open(path, 'rb+') #File with binary data
 
@@ -3178,9 +3265,9 @@ class ParticlesProjection(bpy.types.Operator):
 
         N = len(array_3d[0])   #Size of the matrix
 
-        particles_number = bpy.data.scenes['Scene'].my_tool.int_box_n_particulas #Read from the panel 
+        particles_number = bpy.context.scene.iso_render.int_box_n_particulas #Read from the panel 
         
-        actual_state = bpy.data.scenes["Scene"].my_tool.int_box_state 
+        actual_state = bpy.context.scene.iso_render.int_box_state 
 
         if (actual_state == -1):
             actual_state=0
@@ -3194,7 +3281,7 @@ class ParticlesProjection(bpy.types.Operator):
         emitter = bpy.data.objects['Sphere_projections']  
         psys1 = emitter.particle_systems[-1] 
 
-        particles_number = bpy.data.scenes['Scene'].my_tool.int_box_n_particulas
+        particles_number = bpy.context.scene.iso_render.int_box_n_particulas
 
         #Use an auxiliar array to work with a variable number of points, 
         #allowing the user to make diferent points simulation with good results
@@ -3224,8 +3311,8 @@ class ParticlesProjection(bpy.types.Operator):
             offset_z = -1 * (bpy.context.object.scale[2] + ( -1 * bpy.context.object.location[2]))
 
         except:
-            offset_xy = -1 * bpy.context.scene.my_tool.int_box_offset
-            offset_z = -1 * bpy.context.scene.my_tool.int_box_offset
+            offset_xy = -1 * bpy.context.scene.iso_render.int_box_offset
+            offset_z = -1 * bpy.context.scene.iso_render.int_box_offset
 
 
 
@@ -3236,7 +3323,7 @@ class ParticlesProjection(bpy.types.Operator):
         prob = 0
         cont = 0
 
-        if (bpy.context.scene.PlanesProject == "X"):
+        if (bpy.context.scene.iso_render.planes_project == "X"):
             for pa in psys1.particles:
                 #God´s particle solution
                 #if pa.die_time < 500 :
@@ -3255,7 +3342,7 @@ class ParticlesProjection(bpy.types.Operator):
                 cont += 1 
 
 
-        if (bpy.context.scene.PlanesProject == "Y"):
+        if (bpy.context.scene.iso_render.planes_project == "Y"):
             for pa in psys1.particles:
                 #God´s particle solution
                 #if pa.die_time < 500 :
@@ -3273,7 +3360,7 @@ class ParticlesProjection(bpy.types.Operator):
                     pa.location = (-10000,-10000,-10000)
                 cont += 1 
 
-        if (bpy.context.scene.PlanesProject == "Z"):
+        if (bpy.context.scene.iso_render.planes_project == "Z"):
             for pa in psys1.particles:
                 #God´s particle solution
                 #if pa.die_time < 500 :
@@ -3291,7 +3378,7 @@ class ParticlesProjection(bpy.types.Operator):
                     pa.location = (-10000,-10000,-10000)
                 cont += 1 
 
-        if (bpy.context.scene.PlanesProject == "XZ"):
+        if (bpy.context.scene.iso_render.planes_project == "XZ"):
 
             #X
             for pa in psys1.particles:
@@ -3340,22 +3427,6 @@ class ParticlesProjection(bpy.types.Operator):
         bpy.context.scene.frame_current = bpy.context.scene.frame_current + 1
         return {'FINISHED'}            # this lets blender know the operator finished successfully.
 
-# ------------------------------------------------------------------------
-#    Register and unregister functions
-# ------------------------------------------------------------------------
-
-def register():
-    bpy.utils.register_class(ParticlesProjection)
-
-
-def unregister():
-    bpy.utils.unregister_class(ParticlesProjection)
-    
-# This allows you to run the script directly from blenders text editor
-# to test the addon without having to install it.
-if __name__ == "__main__":
-    register()  
-
 
 
 
@@ -3401,16 +3472,137 @@ class AREATYPE_OT_split(bpy.types.Operator):
         return {"CANCELLED"}
 
 
-def viewdraw(self,context):
-    layout = self.layout
-    layout.operator("areatype.splitview",text="",icon="COLOR_BLUE")
+    def viewdraw(self,context):
+        layout = self.layout
+        layout.operator("areatype.splitview",text="",icon="COLOR_BLUE")
 
 
+
+
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+#
+#    __    __  __    __          _______   ________   ______   ______   ______  ________  ________  _______  
+#   |  \  |  \|  \  |  \        |       \ |        \ /      \ |      \ /      \|        \|        \|       \ 
+#   | $$  | $$| $$\ | $$        | $$$$$$$\| $$$$$$$$|  $$$$$$\ \$$$$$$|  $$$$$$\\$$$$$$$$| $$$$$$$$| $$$$$$$\
+#   | $$  | $$| $$$\| $$ ______ | $$__| $$| $$__    | $$ __\$$  | $$  | $$___\$$  | $$   | $$__    | $$__| $$
+#   | $$  | $$| $$$$\ $$|      \| $$    $$| $$  \   | $$|    \  | $$   \$$    \   | $$   | $$  \   | $$    $$
+#   | $$  | $$| $$\$$ $$ \$$$$$$| $$$$$$$\| $$$$$   | $$ \$$$$  | $$   _\$$$$$$\  | $$   | $$$$$   | $$$$$$$\
+#   | $$__/ $$| $$ \$$$$        | $$  | $$| $$_____ | $$__| $$ _| $$_ |  \__| $$  | $$   | $$_____ | $$  | $$
+#    \$$    $$| $$  \$$$        | $$  | $$| $$     \ \$$    $$|   $$ \ \$$    $$  | $$   | $$     \| $$  | $$
+#     \$$$$$$  \$$   \$$         \$$   \$$ \$$$$$$$$  \$$$$$$  \$$$$$$  \$$$$$$    \$$    \$$$$$$$$ \$$   \$$
+#   
+#
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+ 
 def register():
-    bpy.types.VIEW3D_HT_header.prepend(viewdraw)
-    bpy.utils.register_module(__name__)
+    bpy.utils.register_class(RenderPropertySettings)
+    bpy.types.Scene.iso_render = PointerProperty(type=RenderPropertySettings)
+    bpy.utils.register_class(RenderProperties)
 
+    #Panels
+    bpy.utils.register_class(PanelStartingParameters)
+    bpy.utils.register_class(PanelDataSelection)
+    bpy.utils.register_class(PanelStates)
+    bpy.utils.register_class(PanelSaveFiles)
+    bpy.utils.register_class(PanelTemplate)
+    bpy.utils.register_class(PanelCut)
+    bpy.utils.register_class(PanelProject)
+    bpy.utils.register_class(PanelRenderData)
 
+    #Classes
+    bpy.utils.register_class(OBJECT_OT_AddColors)
+    bpy.utils.register_class(OBJECT_OT_ResetButton)
+    bpy.utils.register_class(OBJECT_OT_RenderButton)
+    bpy.utils.register_class(OBJECT_OT_RenderAllButton)
+    bpy.utils.register_class(OBJECT_OT_RenderAllProjButton)
+    bpy.utils.register_class(OBJECT_OT_RenderAllCutButton)
+    bpy.utils.register_class(OBJECT_OT_RenderAllFrame)
+    bpy.utils.register_class(OBJECT_OT_RenderVideoButton)
+    bpy.utils.register_class(OBJECT_OT_CameraPlacement)
+    bpy.utils.register_class(OBJECT_OT_CameraPlacement2)
+    bpy.utils.register_class(OBJECT_OT_PlanePlacement)
+    bpy.utils.register_class(OBJECT_OT_PlaneDelete)
+    bpy.utils.register_class(OBJECT_OT_PlanePlacementProject)
+    bpy.utils.register_class(OBJECT_OT_PlaneDeleteProject)
+    bpy.utils.register_class(OBJECT_OT_Template_1)
+    bpy.utils.register_class(OBJECT_OT_Template_2)
+    bpy.utils.register_class(OBJECT_OT_Template_3)
+    bpy.utils.register_class(OBJECT_OT_Template_4)
+    bpy.utils.register_class(OBJECT_OT_Split_Screen)
+    bpy.utils.register_class(OBJECT_OT_Initial_Object)
+    bpy.utils.register_class(OBJECT_OT_Initial_Object2)
+    bpy.utils.register_class(OBJECT_OT_Export_Parameters)
+    bpy.utils.register_class(OBJECT_OT_SaveThisFiles)
+    bpy.utils.register_class(OBJECT_OT_SaveAllFiles)
+
+    #QMBlender base classes
+    bpy.utils.register_class(ParticleCalculator)
+    bpy.utils.register_class(ParticlesStabilizer)
+    bpy.utils.register_class(ParticlesForward)
+    bpy.utils.register_class(ParticlesBackward)
+    bpy.utils.register_class(ParticlesCalculation)
+    bpy.utils.register_class(ParticlesCut)
+    bpy.utils.register_class(ParticlesProjection)
+    bpy.utils.register_class(AREATYPE_OT_split)
+
+ 
 def unregister():
-    bpy.types.VIEW3D_HT_header.remove(viewdraw)
-    bpy.utils.unregister_module(__name__)
+    bpy.utils.unregister_class(RenderPropertySettings)
+    bpy.utils.unregister_class(RenderProperties)
+
+    #Panels
+    bpy.utils.unregister_class(PanelStartingParameters)
+    bpy.utils.unregister_class(PanelDataSelection)
+    bpy.utils.unregister_class(PanelStates)
+    bpy.utils.unregister_class(PanelSaveFiles)
+    bpy.utils.unregister_class(PanelTemplate)   
+    bpy.utils.unregister_class(PanelCut)
+    bpy.utils.unregister_class(PanelProject)
+    bpy.utils.unregister_class(PanelRenderData)
+
+    #Classes
+    bpy.utils.unregister_class(OBJECT_OT_AddColors)
+    bpy.utils.unregister_class(OBJECT_OT_ResetButton)
+    bpy.utils.unregister_class(OBJECT_OT_RenderButton)
+    bpy.utils.unregister_class(OBJECT_OT_RenderAllButton)
+    bpy.utils.unregister_class(OBJECT_OT_RenderAllProjButton)
+    bpy.utils.unregister_class(OBJECT_OT_RenderAllCutButton)
+    bpy.utils.unregister_class(OBJECT_OT_RenderAllFrame)
+    bpy.utils.unregister_class(OBJECT_OT_RenderVideoButton)
+    bpy.utils.unregister_class(OBJECT_OT_CameraPlacement)
+    bpy.utils.unregister_class(OBJECT_OT_CameraPlacement2)
+    bpy.utils.unregister_class(OBJECT_OT_PlanePlacement)
+    bpy.utils.unregister_class(OBJECT_OT_PlaneDelete)
+    bpy.utils.unregister_class(OBJECT_OT_PlanePlacementProject)
+    bpy.utils.unregister_class(OBJECT_OT_PlaneDeleteProject)
+    bpy.utils.unregister_class(OBJECT_OT_Template_1)
+    bpy.utils.unregister_class(OBJECT_OT_Template_2)
+    bpy.utils.unregister_class(OBJECT_OT_Template_3)
+    bpy.utils.unregister_class(OBJECT_OT_Template_4)
+    bpy.utils.unregister_class(OBJECT_OT_Split_Screen)
+    bpy.utils.unregister_class(OBJECT_OT_Initial_Object)
+    bpy.utils.unregister_class(OBJECT_OT_Initial_Object2)
+    bpy.utils.unregister_class(OBJECT_OT_Export_Parameters)
+    bpy.utils.unregister_class(OBJECT_OT_SaveThisFiles)
+    bpy.utils.unregister_class(OBJECT_OT_SaveAllFiles)
+    
+    #QMBlender base classes
+    bpy.utils.unregister_class(ParticleCalculator)
+    bpy.utils.unregister_class(ParticlesStabilizer)
+    bpy.utils.unregister_class(ParticlesForward)
+    bpy.utils.unregister_class(ParticlesBackward)
+    bpy.utils.unregister_class(ParticlesCalculation)
+    bpy.utils.unregister_class(ParticlesCut)
+    bpy.utils.unregister_class(ParticlesProjection)
+    bpy.utils.unregister_class(AREATYPE_OT_split)
+    
+
+
+if __name__ == "__main__" :
+    register()
